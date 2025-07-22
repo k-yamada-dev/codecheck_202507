@@ -1,0 +1,169 @@
+{
+  "common": {
+    "appName": "AcuaSaaS",
+    "welcome": "Welcome",
+    "login": "Login",
+    "logout": "Logout",
+    "email": "Email Address",
+    "signIn": "Sign In",
+    "signInWithKeycloak": "Sign in with Keycloak",
+    "menu": {
+      "item1": "Menu Item 1"
+    }
+  },
+  "login": {
+    "welcome": "Welcome to AcuaSaaS",
+    "emailPlaceholder": "Enter your email address"
+  },
+  "header": {
+    "appName": "AcuaSaaS",
+    "menu": "Menu"
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "totalUsers": "Total Users",
+    "activeUsers": "Active Users",
+    "reports": "Reports",
+    "notifications": "Notifications",
+    "recentActivity": "Recent Activity",
+    "noRecentActivity": "No recent activity",
+    "quickActions": "Quick Actions",
+    "noQuickActions": "No quick actions available",
+    "reportsDescription": "Number of processed files",
+    "notificationsDescription": "Unread notifications",
+    "storageCapacity": "Storage Capacity",
+    "storageCapacityDescription": "Current storage usage",
+    "manageStorage": "Manage Storage",
+    "recentJobs": "Recent Jobs",
+    "recentJobsDescription": "Recently executed jobs",
+    "jobId": "Job ID",
+    "jobStatus": "Status",
+    "viewAllJobs": "View All Jobs"
+  },
+  "imageManagement": {
+    "title": "Image Management",
+    "uploadButton": "Upload Image",
+    "uploadModalTitle": "Upload Image",
+    "table": {
+      "fileName": "File Name",
+      "fileSize": "Size",
+      "uploadedAt": "Uploaded At"
+    }
+  },
+  "watermark": {
+    "title": "Watermark"
+  },
+  "job": {
+    "title": "JOB List",
+    "tabs": {
+      "all": "All Jobs",
+      "embed": "Embed Jobs",
+      "detect": "Detect Jobs"
+    },
+    "table": {
+      "id": "JOB ID",
+      "type": "Type",
+      "status": "Status",
+      "user": "User",
+      "createdAt": "Created At",
+      "completedAt": "Completed At",
+      "details": "Details"
+    }
+  },
+  "log": {
+    "title": "Audit Log",
+    "exportCsv": "Export CSV",
+    "filter": {
+      "period": "Time period",
+      "user": "User",
+      "apply": "Apply Filter"
+    },
+    "table": {
+      "timestamp": "Timestamp",
+      "user": "User",
+      "action": "Action",
+      "details": "Details"
+    }
+  },
+  "userManagement": {
+    "title": "User Management",
+    "inviteButton": "Invite User",
+    "table": {
+      "name": "Name",
+      "email": "Email Address",
+      "role": "Role",
+      "status": "Status",
+      "actions": "Actions"
+    }
+  },
+  "imageUploader": {
+    "dragAndDrop": "Drag and drop files here",
+    "or": "or",
+    "selectFiles": "Select Files",
+    "selectedFiles": "Selected Files"
+  },
+  "error": {
+    "somethingWentWrong": "Something went wrong",
+    "unknownError": "An unknown error occurred",
+    "reloadPage": "Reload Page",
+    "networkError": "Network error occurred",
+    "serverError": "Server error occurred",
+    "notFound": "Page not found",
+    "unauthorized": "Authentication required",
+    "forbidden": "Access forbidden"
+  },
+  "encode": {
+    "title": "Watermark Embedding",
+    "selectFile": "Select Image",
+    "watermark": "Watermark Text",
+    "strength": "Strength",
+    "blockSize": "Block Size",
+    "mode": "Mode",
+    "modes": {
+      "normal": "Normal",
+      "fast": "Fast",
+      "quality": "Quality"
+    },
+    "enmode": "Encoding Mode",
+    "enmodes": {
+      "standard": "Standard",
+      "enhanced": "Enhanced"
+    },
+    "quality": "Quality",
+    "submit": "Embed Watermark",
+    "errors": {
+      "noFile": "Please select an image file",
+      "uploadFailed": "Failed to upload file",
+      "encodeFailed": "Failed to embed watermark",
+      "unknown": "An unexpected error occurred"
+    }
+  },
+  "decode": {
+    "title": "Watermark Detection",
+    "selectFile": "Select Image",
+    "blockSize": "Block Size",
+    "timer": "Detection Time (seconds)",
+    "widthScalingFrom": "Width Scaling (Min)",
+    "widthScalingTo": "Width Scaling (Max)",
+    "heightScalingFrom": "Height Scaling (Min)",
+    "heightScalingTo": "Height Scaling (Max)",
+    "rotationFrom": "Rotation Angle (Min)",
+    "rotationTo": "Rotation Angle (Max)",
+    "submit": "Detect Watermark",
+    "imageUrl": "Image URL",
+    "recentJobs": "Recent Detection Jobs",
+    "noJobs": "No detection jobs yet. Start by uploading an image or entering a URL.",
+    "table": {
+      "input": "Input",
+      "detectedText": "Detected Text",
+      "confidence": "Confidence"
+    },
+    "errors": {
+      "noFile": "Please select an image file",
+      "noFileOrUrl": "Please select an image file or enter a URL.",
+      "uploadFailed": "Failed to upload file",
+      "decodeFailed": "Failed to detect watermark",
+      "unknown": "An unexpected error occurred"
+    }
+  }
+}

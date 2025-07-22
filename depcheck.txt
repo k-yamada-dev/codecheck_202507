@@ -1,0 +1,24 @@
+Unused dependencies
+* express-session
+* keycloak-connect
+* multer
+* next-i18next
+* parse-json
+Unused devDependencies
+* @chromatic-com/storybook
+* @commitlint/cli
+* @commitlint/config-conventional
+* @storybook/addon-docs
+* @storybook/addon-onboarding
+* @testing-library/user-event
+* @types/jest
+* @types/multer
+* @types/node-fetch
+* @types/parse-json
+* depcheck
+* jest-environment-jsdom
+* node-fetch
+* postcss
+* tsx
+Missing dependencies
+* @mui/material: ./app/styles/theme.js

@@ -1,0 +1,35 @@
+import '@testing-library/jest-dom';
+import { expect, jest } from '@jest/globals';
+
+// Mock next/navigation
+jest.mock('next/navigation', () => ({
+  useRouter() {
+    return {
+      push: jest.fn(),
+      replace: jest.fn(),
+      prefetch: jest.fn(),
+      back: jest.fn(),
+    };
+  },
+  usePathname() {
+    return '';
+  },
+  useSearchParams() {
+    return new URLSearchParams();
+  },
+}));
+
+// Mock next-auth
+jest.mock('next-auth/react', () => ({
+  useSession: () => ({
+    data: null,
+    status: 'unauthenticated',
+  }),
+  signIn: jest.fn(),
+  signOut: jest.fn(),
+}));
+
+// Extend expect with jest-dom matchers
+expect.extend({
+  toBeInTheDocument: () => ({ pass: true }),
+});

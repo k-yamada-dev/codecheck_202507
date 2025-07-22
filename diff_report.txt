@@ -1,0 +1,86 @@
+# 差分レポート
+
+## フォルダ構成の差分
+
+### 設計メモに存在するがプロジェクトに存在しないフォルダ/ファイル
+- app/api/encode/bulk/route.ts
+- app/api/jobs/[id]/cancel.ts
+- tests/
+
+### プロジェクトに存在するが設計メモに記載されていないフォルダ/ファイル
+- app/config/secrets/acuasaas-credentials.json
+- app/fonts/GeistMonoVF.woff
+- app/fonts/GeistVF.woff
+- components/ui/ (全体)
+- depcheck.txt
+- jest.setup.js
+- jest.setup.ts
+- lib/api/jobs.ts
+- middleware.ts
+- public/locales/ (全体)
+
+---
+
+## Prismaスキーマの差分
+
+### 設計メモに存在するがプロジェクトに存在しない要素
+- Userモデル:
+  - identitySub (String @unique)
+  - isDeleted (Boolean @default(false))
+  - deletedAt (DateTime?)
+  - tenantCode (String?)
+  - userCode (String?)
+  - role (Role)
+  - createdAt (DateTime @default(now()))
+
+- Jobモデル:
+  - imageUrl (String)
+  - resultUrl (String?)
+  - watermark (String?)
+  - confidence (Float?)
+
+- Logモデル (設計メモに存在するがプロジェクトに未実装):
+  ```prisma
+  model Log {
+    id          String   @id @default(cuid())
+    jobId       String
+    job         Job      @relation(fields: [jobId], references: [id])
+    action      String
+    userId      String
+    createdAt   DateTime @default(now())
+  }
+  ```
+
+- BillingUsageモデル (設計メモに存在するがプロジェクトに未実装):
+  ```prisma
+  model BillingUsage {
+    id          String   @id @default(cuid())
+    tenantId    String
+    month       String
+    uploads     Int
+    apiCalls    Int
+    storageGB   Float
+    amount      Float
+    updatedAt   DateTime @updatedAt
+  }
+  ```
+
+### プロジェクトに存在するが設計メモに記載されていない要素
+- Userモデル:
+  - roles (String[] @default([])) // rolesカラムが追加されている
+  - updatedAt (DateTime @updatedAt)
+
+- Jobモデル:
+  - durationMs (Int?)
+  - thumbnailPath (String?)
+  - srcImagePath (String)
+  - params (Json)
+  - result (Json)
+  - ip (String? @db.Inet)
+  - ua (String?)
+  - createdAt (DateTime @default(now()) @db.Timestamptz(6))
+  - @@index([tenantId, type, startedAt(sort: Desc)])
+
+---
+
+以上がフォルダ構成およびPrismaスキーマの差分です。

@@ -1,0 +1,111 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
+}
+
+enum Role {
+  uploader
+  downloader
+  auditor
+  tenant_admin
+  internal_admin
+}
+
+model log {
+  id        String   @id @default(cuid())
+  job_id    String   @db.Uuid
+  job       job      @relation(fields: [job_id], references: [id], name: "fk_logs__jobs")
+  action    String
+  user_id   String
+  created_at DateTime @default(now())
+
+  @@map("logs")
+}
+
+model billing_usage {
+  id         String   @id @default(cuid())
+  tenant_id  String
+  month      String
+  uploads    Int
+  api_calls  Int
+  storage_gb Float
+  amount     Float
+  updated_at DateTime @updatedAt
+
+  @@map("billing_usage")
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum JobType {
+  EMBED
+  DECODE
+}
+
+enum JobStatus {
+  PENDING
+  RUNNING
+  DONE
+  ERROR
+}
+
+model user {
+  id           String    @id @default(uuid()) @db.Uuid
+  tenant_id    String    @db.Uuid
+  provider     String
+  external_id  String
+  name         String
+  email        String
+  roles        String[]  @default([])
+  identity_sub String    @unique
+  is_deleted   Boolean   @default(false)
+  deleted_at   DateTime?
+  tenant_code  String?
+  user_code    String?
+  role         Role
+  created_at   DateTime  @default(now())
+  updated_at   DateTime  @updatedAt
+  jobs         job[]
+
+  @@unique([tenant_id, provider, external_id])
+  @@unique([tenant_id, id])
+  @@map("users")
+}
+
+model job {
+  id            String    @id @default(uuid()) @db.Uuid
+  tenant_id     String    @db.Uuid
+  user_id       String    @db.Uuid
+  user_name     String
+  type          JobType
+  status        JobStatus
+  started_at    DateTime  @default(now()) @db.Timestamptz(6)
+  finished_at   DateTime? @db.Timestamptz(6)
+  duration_ms   Int?
+  thumbnail_path String?
+  src_image_path String
+  params        Json
+  result        Json
+  ip            String?   @db.Inet
+  ua            String?
+  created_at    DateTime  @default(now()) @db.Timestamptz(6)
+  image_url     String
+  result_url    String?
+  watermark     String?
+  confidence    Float?
+
+  user user  @relation(fields: [tenant_id, user_id], references: [tenant_id, id])
+  logs log[] @relation("fk_logs__jobs")
+
+  @@index([tenant_id, type, started_at(sort: Desc)], name: "idx_jobs__tenant_type_started_at")
+  @@map("jobs")
+}

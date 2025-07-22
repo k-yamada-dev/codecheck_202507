@@ -1,0 +1,175 @@
+{
+  "common": {
+    "appName": "AcuaSaaS",
+    "welcome": "ようこそ",
+    "login": "ログイン",
+    "logout": "ログアウト",
+    "email": "メールアドレス",
+    "signIn": "ログインする",
+    "signInWithKeycloak": "Keycloakでログイン",
+    "cancel": "キャンセル",
+    "upload": "アップロード",
+    "menu": {
+      "item1": "メニュー項目1"
+    }
+  },
+  "login": {
+    "welcome": "AcuaSaaSへようこそ！",
+    "emailPlaceholder": "メールアドレスを入力してください"
+  },
+  "header": {
+    "appName": "AcuaSaaS",
+    "menu": "メニュー",
+    "signedInAs": "ログイン中",
+    "logout": "ログアウト"
+  },
+  "dashboard": {
+    "title": "ダッシュボード",
+    "totalUsers": "総ユーザー数",
+    "activeUsers": "アクティブユーザー",
+    "reports": "レポート数",
+    "reportsDescription": "処理済みファイル数",
+    "notifications": "通知",
+    "notificationsDescription": "未読の通知",
+    "recentActivity": "最近のアクティビティ",
+    "noRecentActivity": "最近のアクティビティはありません",
+    "quickActions": "クイックアクション",
+    "noQuickActions": "クイックアクションはありません",
+    "storageCapacity": "ストレージ容量",
+    "storageCapacityDescription": "現在のストレージ使用状況",
+    "manageStorage": "ストレージ管理",
+    "recentJobs": "最新のジョブ",
+    "recentJobsDescription": "最近実行されたジョブ",
+    "jobId": "ジョブID",
+    "jobStatus": "ステータス",
+    "viewAllJobs": "すべてのジョブを見る"
+  },
+  "imageManagement": {
+    "title": "画像管理",
+    "uploadButton": "画像をアップロード",
+    "uploadModalTitle": "画像のアップロード",
+    "table": {
+      "fileName": "ファイル名",
+      "fileSize": "サイズ",
+      "uploadedAt": "アップロード日時"
+    }
+  },
+  "watermark": {
+    "title": "電子透かし埋込"
+  },
+  "job": {
+    "title": "JOB一覧",
+    "tabs": {
+      "all": "すべてのジョブ",
+      "embed": "埋め込みジョブ",
+      "detect": "検出ジョブ"
+    },
+    "table": {
+      "id": "JOB ID",
+      "type": "タイプ",
+      "status": "ステータス",
+      "user": "ユーザー",
+      "createdAt": "作成日時",
+      "completedAt": "完了日時",
+      "details": "詳細"
+    }
+  },
+  "log": {
+    "title": "ログ閲覧",
+    "exportCsv": "CSVエクスポート",
+    "filter": {
+      "period": "期間",
+      "user": "ユーザー",
+      "apply": "フィルタ適用"
+    },
+    "table": {
+      "timestamp": "日時",
+      "user": "ユーザー",
+      "action": "操作",
+      "details": "詳細"
+    }
+  },
+  "userManagement": {
+    "title": "ユーザー管理",
+    "inviteButton": "ユーザーを招待",
+    "table": {
+      "name": "名前",
+      "email": "メールアドレス",
+      "role": "ロール",
+      "status": "ステータス",
+      "actions": "操作"
+    }
+  },
+  "imageUploader": {
+    "dragAndDrop": "ここにファイルをドラッグ＆ドロップ",
+    "or": "または",
+    "selectFiles": "ファイルを選択",
+    "selectedFiles": "選択されたファイル"
+  },
+  "error": {
+    "somethingWentWrong": "エラーが発生しました",
+    "unknownError": "不明なエラーが発生しました",
+    "reloadPage": "ページを再読み込み",
+    "networkError": "ネットワークエラーが発生しました",
+    "serverError": "サーバーエラーが発生しました",
+    "notFound": "ページが見つかりません",
+    "unauthorized": "認証が必要です",
+    "forbidden": "アクセス権限がありません"
+  },
+  "encode": {
+    "title": "電子透かし埋め込み",
+    "description": "画像に電子透かしを埋め込む",
+    "selectFile": "画像を選択",
+    "watermark": "透かし文字",
+    "strength": "強度",
+    "blockSize": "ブロックサイズ",
+    "mode": "モード",
+    "modes": {
+      "normal": "通常",
+      "fast": "高速",
+      "quality": "高品質"
+    },
+    "enmode": "エンコードモード",
+    "enmodes": {
+      "standard": "標準",
+      "enhanced": "拡張"
+    },
+    "quality": "品質",
+    "submit": "透かしを埋め込む",
+    "errors": {
+      "noFile": "画像ファイルを選択してください",
+      "uploadFailed": "アップロードに失敗しました",
+      "encodeFailed": "透かしの埋め込みに失敗しました",
+      "unknown": "予期せぬエラーが発生しました"
+    }
+  },
+  "decode": {
+    "title": "電子透かし検出",
+    "description": "電子透かしを検出する",
+    "selectFile": "画像を選択",
+    "blockSize": "ブロックサイズ",
+    "timer": "検出時間（秒）",
+    "widthScalingFrom": "幅スケーリング（最小）",
+    "widthScalingTo": "幅スケーリング（最大）",
+    "heightScalingFrom": "高さスケーリング（最小）",
+    "heightScalingTo": "高さスケーリング（最大）",
+    "rotationFrom": "回転角度（最小）",
+    "rotationTo": "回転角度（最大）",
+    "submit": "透かしを検出",
+    "imageUrl": "画像URL",
+    "recentJobs": "最近の検出ジョブ",
+    "noJobs": "まだ検出ジョブがありません。画像をアップロードするかURLを入力して開始してください。",
+    "table": {
+      "input": "入力",
+      "detectedText": "検出されたテキスト",
+      "confidence": "信頼度"
+    },
+    "errors": {
+      "noFile": "画像ファイルを選択してください",
+      "noFileOrUrl": "画像ファイルまたはURLを選択してください",
+      "uploadFailed": "アップロードに失敗しました",
+      "decodeFailed": "透かしの検出に失敗しました",
+      "unknown": "予期せぬエラーが発生しました"
+    }
+  }
+}

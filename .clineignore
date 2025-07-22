@@ -1,0 +1,19 @@
+# .clineignore
+# ① 依存ライブラリ
+node_modules/
+**/vendor/
+
+# ② ビルド生成物
+/build/
+/dist/
+/.next/
+/out/
+
+# ④ 大容量データ
+*.csv
+*.xlsx
+assets/raw_images/
+
+# ⑤ IDE 設定
+.vscode/
+.idea/
