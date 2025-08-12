@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import '../i18n/config';
+import '@/i18n/config';
 
 interface ClientLayoutProps {
   children: React.ReactNode;

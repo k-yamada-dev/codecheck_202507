@@ -1,22 +1,48 @@
 {
   "common": {
-    "appName": "AcuaSaaS",
+    "appName": "acuagraphy Online",
     "welcome": "Welcome",
     "login": "Login",
     "logout": "Logout",
     "email": "Email Address",
     "signIn": "Sign In",
     "signInWithKeycloak": "Sign in with Keycloak",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "upload": "Upload",
+    "loading": "Loading",
+    "pagination": {
+      "previous": "Previous",
+      "next": "Next"
+    },
+    "action": {
+      "cancel": "Cancel",
+      "confirm": "Confirm"
+    },
+    "error": {
+      "generic": "An error occurred"
+    },
     "menu": {
       "item1": "Menu Item 1"
     }
   },
   "login": {
-    "welcome": "Welcome to AcuaSaaS",
+    "welcome": "Welcome to acuagraphy Online",
     "emailPlaceholder": "Enter your email address"
   },
+  "forgotPassword": {
+    "title": "Forgot your password?",
+    "description": "Enter your registered email address. We will send you a link to reset your password.",
+    "emailPlaceholder": "Enter your email address",
+    "send": "Send",
+    "sending": "Sending...",
+    "sent": "Password reset email sent. Please check your inbox.",
+    "error": "Failed to send email",
+    "link": "Forgot your password?",
+    "backToLogin": "Back to login"
+  },
   "header": {
-    "appName": "AcuaSaaS",
+    "appName": "acuagraphy Online",
     "menu": "Menu"
   },
   "dashboard": {
@@ -45,9 +71,22 @@
     "uploadButton": "Upload Image",
     "uploadModalTitle": "Upload Image",
     "table": {
-      "fileName": "File Name",
-      "fileSize": "Size",
-      "uploadedAt": "Uploaded At"
+      "header": {
+        "thumbnail": "Thumbnail",
+        "fileName": "File Name",
+        "uploader": "Uploader",
+        "createdAt": "Created At"
+      },
+      "noResults": "No images found."
+    },
+    "action": {
+      "archive": "Archive"
+    },
+    "dialog": {
+      "archive": {
+        "title": "Archive this image?",
+        "description": "This action cannot be undone. The archived image will no longer be displayed in the list, but it will be retained according to the system policy before being permanently deleted."
+      }
     }
   },
   "watermark": {
@@ -165,5 +204,8 @@
       "decodeFailed": "Failed to detect watermark",
       "unknown": "An unexpected error occurred"
     }
+  },
+  "admin": {
+    "title": "Admin Console"
   }
 }

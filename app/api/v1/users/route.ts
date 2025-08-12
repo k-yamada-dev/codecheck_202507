@@ -1,51 +1,70 @@
-// GET /api/v1/users?tenantId=...&search=...
-import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
+import { NextResponse, NextRequest } from 'next/server';
+import { prisma } from '@/lib/prisma';
+import { withErrorHandling } from '@/lib/errors/apiHandler';
+import { getSessionInfo } from '@/lib/utils/apiAuth';
+import { UserCreateSchema, UserListQuerySchema } from '@/app/api/_schemas/users';
+import { Prisma } from '@prisma/client';
+import { createGipUserAndDbUser } from '@/lib/userService';
+import { AppError, ErrorCode } from '@/lib/errors/core';
 
-const prisma = new PrismaClient();
+export const GET = withErrorHandling(async (request: NextRequest) => {
+  const session = await getSessionInfo();
+  const { searchParams } = new URL(request.url);
+  const query = UserListQuerySchema.parse(Object.fromEntries(searchParams));
 
-function problemJson(type: string, title: string, status: number, detail?: string) {
-  return {
-    type,
-    title,
-    status,
-    detail,
+  const where: Prisma.UserWhereInput = {
+    tenantId: session.tenantId,
+    ...(query.search && {
+      OR: [
+        { name: { contains: query.search, mode: 'insensitive' } },
+        { email: { contains: query.search, mode: 'insensitive' } },
+      ],
+    }),
   };
-}
 
-export async function GET(req: NextRequest) {
-  const { searchParams } = new URL(req.url);
-  const tenantId = searchParams.get('tenantId');
-  const search = searchParams.get('search') ?? '';
-
-  if (!tenantId) {
-    return NextResponse.json(
-      problemJson('about:blank', 'Missing tenantId', 400),
-      { status: 400 }
-    );
-  }
-
-  try {
-    const where: any = { tenantId };
-    if (search) {
-      where.OR = [
-        { name: { contains: search } },
-        { email: { contains: search } },
-        { externalId: { contains: search } },
-      ];
-    }
-
-    const users = await prisma.user.findMany({
+  const [users, total] = await prisma.$transaction([
+    prisma.user.findMany({
       where,
+      take: query.limit,
+      skip: (query.page - 1) * query.limit,
       orderBy: { updatedAt: 'desc' },
-      take: 50,
-    });
+      include: { userRoles: true },
+    }),
+    prisma.user.count({ where }),
+  ]);
 
-    return NextResponse.json({ users });
-  } catch (err: any) {
-    return NextResponse.json(
-      problemJson('about:blank', err.message || 'Internal Server Error', 500),
-      { status: 500 }
-    );
+  const usersWithRoles = users.map(user => ({
+    ...user,
+    roles: user.userRoles.map(ur => ur.role),
+  }));
+
+  return NextResponse.json({ users: usersWithRoles, total });
+});
+
+export const POST = withErrorHandling(async (request: NextRequest) => {
+  const session = await getSessionInfo();
+  const body = await request.json();
+  const { roles, ...userData } = UserCreateSchema.parse(body);
+
+  if (!roles || roles.length === 0) {
+    throw new AppError(ErrorCode.VALIDATION, '少なくとも1つのロールを指定する必要があります', 400);
   }
-}
+
+  const newUserWithRoles = await prisma.$transaction(async tx => {
+    const user = await createGipUserAndDbUser({
+      prisma: tx,
+      tenantId: session.tenantId,
+      email: userData.email,
+      name: userData.name,
+      roles: roles,
+    });
+    return user;
+  });
+
+  const responseData = {
+    ...newUserWithRoles,
+    roles: newUserWithRoles.userRoles.map(ur => ur.role),
+  };
+
+  return NextResponse.json(responseData, { status: 201 });
+});

@@ -1,0 +1,18 @@
+diff --git a/lib/transformer.js b/lib/transformer.js
+index 12ce1a1afe7708a613d26c66b485506234510d51..2479ecf368ff5106732b346a7bf027dc6d5f4482 100644
+--- a/lib/transformer.js
++++ b/lib/transformer.js
+@@ -364,7 +364,12 @@ class Transformer {
+         if (this.hasJson) {
+             jsonSchemaImplementation += `\n`;
+             jsonSchemaImplementation += `const literalSchema = z.union([z.string(), z.number(), z.boolean()]);\n`;
+-            jsonSchemaImplementation += `const jsonSchema = z.lazy(() =>\n`;
++            // jsonSchemaImplementation += `const jsonSchema = z.lazy(() =>\n`;
++            // Input 系なら InputJsonValue、Filter 系なら JsonValue
++            const isInputLike = /Input$|Create|Update|Upsert|Unchecked/.test(this.name) &&
++            !/Filter|WithAggregates/.test(this.name);
++            const jsonType = isInputLike ? 'Prisma.InputJsonValue' : 'Prisma.JsonValue';
++            jsonSchemaImplementation += `const jsonSchema: z.ZodType<${jsonType}> = z.lazy(() =>\n`;
+             jsonSchemaImplementation += `  z.union([literalSchema, z.array(jsonSchema.nullable()), z.record(z.string(), jsonSchema.nullable())])\n`;
+             jsonSchemaImplementation += `);\n\n`;
+         }

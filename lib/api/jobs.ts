@@ -60,7 +60,7 @@ export interface CreateJobPayload {
   type: JobType;
   srcImagePath: string;
   thumbnailPath?: string;
-  params: Record<string, any>;
+  params: Record<string, unknown>;
 }
 
 export const createJob = async (payload: CreateJobPayload): Promise<Job> => {

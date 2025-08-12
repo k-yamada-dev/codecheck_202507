@@ -2,15 +2,17 @@
 
 import React, { useState, useCallback } from 'react';
 import { v4 as uuidv4 } from 'uuid';
-import ImageDropzone from '../components/ImageDropzone';
-import WatermarkTable, { WatermarkImage, WatermarkSettings } from '../components/WatermarkTable';
-import { WatermarkParamForm } from '../components/WatermarkParamForm';
+import ImageDropzone from '@/components/ImageDropzone';
+import WatermarkTable, { WatermarkImage, WatermarkSettings } from '@/components/WatermarkTable';
+import { WatermarkParamForm } from '@/components/WatermarkParamForm';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
-import { apiClient } from '../utils/apiClient';
-import { createJob } from '@/lib/api/jobs';
+import { handleUIError } from '@/lib/errors/uiHandler';
+import { uploadFile } from '@/lib/gcs/upload.client';
 import { JobType } from '@prisma/client';
-import { useJobs } from '../hooks/useJobs';
+import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
+import { useJobsCreateJob, queryKeys } from '@/__generated__/hooks';
+import { apiClient, JobsGetJobsResponse, JobsCreateJobResponse } from '@/__generated__/client/api';
 import { useSession } from 'next-auth/react';
 
 const defaultWatermarkSettings: WatermarkSettings = {
@@ -24,17 +26,22 @@ const defaultWatermarkSettings: WatermarkSettings = {
 
 const WatermarkPage: React.FC = () => {
   const { data: session } = useSession();
+  const queryClient = useQueryClient();
   const [images, setImages] = useState<WatermarkImage[]>([]);
   const [selectedImageIds, setSelectedImageIds] = useState<Set<string>>(new Set());
-  // RowDrawerは廃止されたため、関連stateも削除
-  // const [isRowDrawerOpen, setIsRowDrawerOpen] = useState(false);
-  // const [selectedImageForDrawer, setSelectedImageForDrawer] = useState<WatermarkImage | null>(null);
+
+  const createJobMutation = useJobsCreateJob();
 
   // 現在のユーザーの実行済みJOBを取得
-  const { data: jobsData } = useJobs({
-    filter: 'embed',
-    search: '',
-    userId: session?.user?.id,
+  const { data: jobsData } = useInfiniteQuery<JobsGetJobsResponse, Error>({
+    queryKey: [queryKeys.jobs.all, { filter: 'embed', userId: session?.user?.id }],
+    queryFn: ({ pageParam }) =>
+      apiClient.jobsGetJobs({
+        query: { filter: 'embed', userId: session?.user?.id, cursor: pageParam },
+      }),
+    initialPageParam: undefined,
+    getNextPageParam: lastPage => lastPage.nextCursor,
+    enabled: !!session?.user?.id,
   });
 
   // 実行済みJOBをWatermarkImage形式に変換
@@ -42,17 +49,18 @@ const WatermarkPage: React.FC = () => {
     if (!jobsData) return [];
 
     return jobsData.pages.flatMap(page =>
-      page.jobs.map(job => ({
+      page.jobs.map((job: JobsCreateJobResponse) => ({
         id: job.id,
         file: new File([], job.srcImagePath?.split('/').pop() || 'unknown.jpg'),
         previewUrl: job.thumbnailPath || job.srcImagePath || '',
         settings: {
-          text: (job.params as any)?.watermarkText || '',
-          encodeMode: (job.params as any)?.encodeMode || '通常',
-          jpegEmbedMode: (job.params as any)?.jpegEmbedMode || '通常',
-          strength: (job.params as any)?.strength || 3,
-          blockSize: (job.params as any)?.blockSize || '自動設定',
-          jpegQuality: (job.params as any)?.jpegQuality || 90,
+          text: ((job.params as Record<string, unknown>)?.watermarkText as string) || '',
+          encodeMode: ((job.params as Record<string, unknown>)?.encodeMode as string) || '通常',
+          jpegEmbedMode:
+            ((job.params as Record<string, unknown>)?.jpegEmbedMode as string) || '通常',
+          strength: ((job.params as Record<string, unknown>)?.strength as number) || 3,
+          blockSize: ((job.params as Record<string, unknown>)?.blockSize as string) || '自動設定',
+          jpegQuality: ((job.params as Record<string, unknown>)?.jpegQuality as number) || 90,
         } as WatermarkSettings,
         status:
           job.status === 'DONE'
@@ -64,6 +72,8 @@ const WatermarkPage: React.FC = () => {
                 : 'pending',
         jobId: job.id,
         uploadedFileUrl: job.srcImagePath || undefined,
+        thumbnailPath: job.thumbnailPath || undefined,
+        isUploaded: !!job.thumbnailPath,
       }))
     );
   }, [jobsData]);
@@ -157,12 +167,11 @@ const WatermarkPage: React.FC = () => {
         setImages(prevImages =>
           prevImages.map(img => (img.id === image.id ? { ...img, status: 'uploading' } : img))
         );
-        const uploadResponse = await apiClient.uploadFile(image.file);
-        if (!uploadResponse.data || !uploadResponse.data.filePath) {
-          throw new Error(uploadResponse.error || 'ファイルのアップロードに失敗しました。');
-        }
-        const uploadedFileUrl = uploadResponse.data.filePath;
-        const thumbnailPath = uploadResponse.data.thumbnailPath;
+        const { filePath, thumbnailPath } = await uploadFile<{
+          filePath: string;
+          thumbnailPath: string;
+        }>(image.file);
+        const uploadedFileUrl = filePath;
 
         // エンコード
         setImages(prevImages =>
@@ -170,16 +179,6 @@ const WatermarkPage: React.FC = () => {
             img.id === image.id ? { ...img, status: 'running', uploadedFileUrl } : img
           )
         );
-
-        const encodeParams = {
-          fileUrl: uploadedFileUrl,
-          watermarkText: image.settings.text,
-          encodeMode: image.settings.encodeMode,
-          jpegEmbedMode: image.settings.jpegEmbedMode,
-          strength: image.settings.strength,
-          blockSize: image.settings.blockSize,
-          jpegQuality: image.settings.jpegQuality,
-        };
 
         const jobParams = {
           watermarkText: image.settings.text,
@@ -190,28 +189,40 @@ const WatermarkPage: React.FC = () => {
           jpegQuality: image.settings.jpegQuality,
         };
 
-        const newJob = await createJob({
-          type: JobType.EMBED,
-          srcImagePath: uploadedFileUrl,
-          thumbnailPath: thumbnailPath,
-          params: jobParams,
-        });
-
-        setImages(prevImages =>
-          prevImages.map(img =>
-            img.id === image.id
-              ? { ...img, status: 'pending', jobId: newJob.id } // Store jobId for tracking
-              : img
-          )
+        createJobMutation.mutate(
+          {
+            body: {
+              type: JobType.EMBED,
+              srcImagePath: uploadedFileUrl,
+              thumbnailPath: thumbnailPath,
+              params: jobParams,
+            },
+          },
+          {
+            onSuccess: newJob => {
+              setImages(prevImages =>
+                prevImages.map(img =>
+                  img.id === image.id
+                    ? { ...img, status: 'pending', jobId: newJob.id } // Store jobId for tracking
+                    : img
+                )
+              );
+              toast.success(`${image.file.name} の透かし埋込ジョブが開始されました。`);
+              queryClient.invalidateQueries({ queryKey: [queryKeys.jobs.all] });
+            },
+            onError: error => {
+              handleUIError(error);
+              setImages(prevImages =>
+                prevImages.map(img => (img.id === image.id ? { ...img, status: 'error' } : img))
+              );
+            },
+          }
         );
-        toast.success(`${image.file.name} の透かし埋込ジョブが開始されました。`);
       } catch (error) {
-        const errorMessage =
-          error instanceof Error ? error.message : '不明なエラーが発生しました。';
+        handleUIError(error);
         setImages(prevImages =>
           prevImages.map(img => (img.id === image.id ? { ...img, status: 'error' } : img))
         );
-        toast.error(`${image.file.name} の処理に失敗しました: ${errorMessage}`);
       }
     }
   }, [images, selectedImageIds]);
@@ -235,29 +246,34 @@ const WatermarkPage: React.FC = () => {
 
       // 実行済みJOBの場合は、同じパラメータで新しいJOBを作成
       if (image.jobId) {
-        try {
-          const jobParams = {
-            watermarkText: image.settings.text,
-            encodeMode: image.settings.encodeMode,
-            jpegEmbedMode: image.settings.jpegEmbedMode,
-            strength: image.settings.strength,
-            blockSize: image.settings.blockSize,
-            jpegQuality: image.settings.jpegQuality,
-          };
+        const jobParams = {
+          watermarkText: image.settings.text,
+          encodeMode: image.settings.encodeMode,
+          jpegEmbedMode: image.settings.jpegEmbedMode,
+          strength: image.settings.strength,
+          blockSize: image.settings.blockSize,
+          jpegQuality: image.settings.jpegQuality,
+        };
 
-          await createJob({
-            type: JobType.EMBED,
-            srcImagePath: image.uploadedFileUrl || '',
-            thumbnailPath: image.previewUrl,
-            params: jobParams,
-          });
-
-          toast.success('ジョブをリトライしました。');
-        } catch (error) {
-          const errorMessage =
-            error instanceof Error ? error.message : '不明なエラーが発生しました。';
-          toast.error(`ジョブのリトライに失敗しました: ${errorMessage}`);
-        }
+        createJobMutation.mutate(
+          {
+            body: {
+              type: JobType.EMBED,
+              srcImagePath: image.uploadedFileUrl || '',
+              thumbnailPath: image.previewUrl,
+              params: jobParams,
+            },
+          },
+          {
+            onSuccess: () => {
+              toast.success('ジョブをリトライしました。');
+              queryClient.invalidateQueries({ queryKey: [queryKeys.jobs.all] });
+            },
+            onError: error => {
+              handleUIError(error);
+            },
+          }
+        );
       } else {
         // 未実行の画像の場合は、ステータスをidleに戻す
         setImages(prevImages =>

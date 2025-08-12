@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getConfig } from '@/app/config/config';
+import { getConfig } from '@/config/config';
 
 export async function GET(req: NextRequest) {
   const config = getConfig();

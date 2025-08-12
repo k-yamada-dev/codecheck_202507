@@ -8,17 +8,18 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Loader2, AlertCircle } from 'lucide-react';
-import ImageUploader from '../components/ImageUploader'; // ImageUploaderを再利用
-import { apiClient } from '../utils/apiClient';
+import ImageUploader from '@/components/ImageUploader'; // ImageUploaderを再利用
+import { uploadFile } from '@/lib/gcs/upload.client';
 import { createJob } from '@/lib/api/jobs';
-import { Job, JobType, JobStatus } from '@prisma/client'; // PrismaのJob型をインポート
+import { Job, JobType } from '@prisma/client'; // PrismaのJob型をインポート
 import { toast } from 'sonner';
+import { handleUIError } from '@/lib/errors/uiHandler';
 
 // 仮のジョブ型定義をPrismaのJob型に置き換え
 interface DecodeJob extends Job {
   inputFileName: string; // UI表示用にファイル名/URLを保持
   detectedText?: string;
-  confidence?: number;
+  confidence: number | null;
 }
 
 // DecodeInputAreaの仮実装
@@ -47,11 +48,8 @@ const DecodeInputArea: React.FC<{ onJobSubmit: (job: DecodeJob) => void }> = ({ 
       let uploadedFileUrl: string;
       if (files.length > 0) {
         // ファイルアップロード
-        const uploadResponse = await apiClient.uploadFile(files[0]);
-        if (!uploadResponse.data || !uploadResponse.data.fileUrl) {
-          throw new Error(uploadResponse.error || 'ファイルのアップロードに失敗しました。');
-        }
-        uploadedFileUrl = uploadResponse.data.fileUrl;
+        const uploadResponse = await uploadFile<{ filePath: string }>(files[0]);
+        uploadedFileUrl = uploadResponse.filePath;
       } else if (url) {
         uploadedFileUrl = url;
       } else {
@@ -72,15 +70,14 @@ const DecodeInputArea: React.FC<{ onJobSubmit: (job: DecodeJob) => void }> = ({ 
         ...newJob,
         inputFileName: files.length > 0 ? files[0].name : url, // UI表示用にファイル名/URLを保持
         detectedText: undefined,
-        confidence: undefined,
+        confidence: null,
       });
       toast.success(
         `${files.length > 0 ? files[0].name : url} の透かし検出ジョブが開始されました。`
       );
-      setLoading(false);
     } catch (err) {
-      const message = err instanceof Error ? err.message : t('decode.errors.unknown');
-      setError(message);
+      handleUIError(err);
+    } finally {
       setLoading(false);
     }
   };

@@ -1,0 +1,2 @@
+patchedDependencies:
+  prisma-zod-generator@1.1.1: patches/prisma-zod-generator@1.1.1.patch

@@ -2,10 +2,11 @@
 
 import React, { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useJobs } from '../hooks/useJobs';
-import JobTable from '../components/JobTable';
+import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
+import { apiClient } from '@/__generated__/client/api';
+import { useJobsCreateJob, useJobsDeleteJob, queryKeys } from '@/__generated__/hooks';
+import JobTable from '@/components/JobTable';
 import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
 import {
   Select,
   SelectContent,
@@ -18,17 +19,27 @@ import { useInView } from 'react-intersection-observer';
 import { Loader2 } from 'lucide-react';
 import { Job } from '@prisma/client';
 import { toast } from 'sonner';
+import { handleUIError } from '@/lib/errors/uiHandler';
 
 export default function JobPage() {
   const { t } = useTranslation();
+  const queryClient = useQueryClient();
   const [filters, setFilters] = useState({
     filter: 'all' as 'all' | 'embed' | 'decode',
     search: '',
   });
 
-  const { data, error, fetchNextPage, hasNextPage, isFetching, isFetchingNextPage } = useJobs({
-    ...filters,
-  });
+  const { data, error, fetchNextPage, hasNextPage, isFetching, isFetchingNextPage } =
+    useInfiniteQuery({
+      queryKey: [queryKeys.jobs.all, filters],
+      queryFn: ({ pageParam }) =>
+        apiClient.jobsGetJobs({ query: { ...filters, cursor: pageParam } }),
+      initialPageParam: undefined,
+      getNextPageParam: lastPage => lastPage.nextCursor,
+    });
+
+  const deleteJobMutation = useJobsDeleteJob();
+  const createJobMutation = useJobsCreateJob();
 
   const { ref, inView } = useInView({
     threshold: 0,
@@ -55,50 +66,40 @@ export default function JobPage() {
     }
   };
 
-  const handleDeleteJob = async (job: Job) => {
-    try {
-      const response = await fetch(`/api/v1/jobs/${job.id}`, {
-        method: 'DELETE',
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to delete job');
-      }
-
-      toast.success(t('job.actions.deleteSuccess', 'Job deleted successfully'));
-      // Refresh the job list
-      window.location.reload();
-    } catch (error) {
-      toast.error(t('job.actions.deleteError', 'Failed to delete job'));
-    }
+  const handleDeleteJob = (job: Job) => {
+    // TODO: The generated client for DELETE is incorrect. It should take `params`.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    deleteJobMutation.mutate({ params: { id: job.id } } as any, {
+      onSuccess: () => {
+        toast.success(t('job.actions.deleteSuccess', 'Job deleted successfully'));
+        queryClient.invalidateQueries({ queryKey: [queryKeys.jobs.all] });
+      },
+      onError: error => {
+        handleUIError(error);
+      },
+    });
   };
 
-  const handleRetryJob = async (job: Job) => {
-    try {
-      // Create a new job with the same parameters
-      const response = await fetch('/api/v1/jobs', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
+  const handleRetryJob = (job: Job) => {
+    createJobMutation.mutate(
+      {
+        body: {
           type: job.type,
           srcImagePath: job.srcImagePath,
           thumbnailPath: job.thumbnailPath,
           params: job.params,
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to retry job');
+        },
+      },
+      {
+        onSuccess: () => {
+          toast.success(t('job.actions.retrySuccess', 'Job retry started'));
+          queryClient.invalidateQueries({ queryKey: [queryKeys.jobs.all] });
+        },
+        onError: error => {
+          handleUIError(error);
+        },
       }
-
-      toast.success(t('job.actions.retrySuccess', 'Job retry started'));
-      // Refresh the job list
-      window.location.reload();
-    } catch (error) {
-      toast.error(t('job.actions.retryError', 'Failed to retry job'));
-    }
+    );
   };
 
   return (

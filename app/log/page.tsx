@@ -7,8 +7,10 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Download, Loader2 } from 'lucide-react';
-import { useJobs } from '@/app/hooks/useJobs';
-import LogTable from '@/app/components/LogTable'; // Assuming LogTable will be adapted
+import { useInfiniteQuery } from '@tanstack/react-query';
+import { apiClient } from '@/__generated__/client/api';
+import { queryKeys } from '@/__generated__/hooks';
+import LogTable from '@/components/LogTable'; // Assuming LogTable will be adapted
 import { useDebounce } from 'use-debounce';
 
 type FilterType = 'all' | 'embed' | 'decode';
@@ -22,11 +24,28 @@ export default function LogPage() {
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
 
-  const jobQuery = useJobs({
-    filter,
-    search: debouncedSearchTerm,
-    startDate: startDate || undefined,
-    endDate: endDate || undefined,
+  const jobQuery = useInfiniteQuery({
+    queryKey: [
+      queryKeys.jobs.all,
+      {
+        filter,
+        search: debouncedSearchTerm,
+        startDate: startDate || undefined,
+        endDate: endDate || undefined,
+      },
+    ],
+    queryFn: ({ pageParam }) =>
+      apiClient.jobsGetJobs({
+        query: {
+          filter,
+          search: debouncedSearchTerm,
+          startDate: startDate || undefined,
+          endDate: endDate || undefined,
+          cursor: pageParam,
+        },
+      }),
+    initialPageParam: undefined,
+    getNextPageParam: lastPage => lastPage.nextCursor,
   });
 
   const jobs = useMemo(

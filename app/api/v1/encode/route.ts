@@ -1,49 +1,59 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/app/lib/prisma';
-import { EncodeRequestDTOImpl } from '@/app/dto/EncodeRequestDTO';
+import { prisma } from '@/lib/prisma';
+import { withErrorHandling } from '@/lib/errors/apiHandler';
+import { EncodeRequestSchema } from '@/app/api/_schemas/encode';
+import { getSessionInfo } from '@/lib/utils/apiAuth';
 
-export async function POST(request: NextRequest) {
-  console.log('Encode API called');
-  try {
-    const body = await request.json();
-    const userId = 'example-user-id'; // Replace with actual user ID retrieval logic
-    const tenantId = 'example-tenant-id'; // Replace with actual tenant ID retrieval logic
-    const userName = 'example-user-name'; // Replace with actual user name retrieval logic
-    const encodeRequest = new EncodeRequestDTOImpl(body);
-    const inputPath = '/tmp/dummy-input-path'; // Placeholder for input file path
-    const outputPath = '/tmp/dummy-output-path'; // Placeholder for output file path
+export const POST = withErrorHandling(async (request: NextRequest) => {
+  const body = await request.json();
 
-    const job = await prisma.job.create({
-      data: {
-        tenantId,
-        userId,
-        userName,
-        type: 'EMBED',
-        status: 'RUNNING',
-        srcImagePath: inputPath,
-        params: body,
-        result: {}, // 空のオブジェクトを初期値として追加
+  // Validate request using Zod schema
+  const encodeRequest = EncodeRequestSchema.parse(body);
+
+  // Get session information
+  const { tenantId, userId, userName } = await getSessionInfo();
+
+  const inputPath = `/tmp/${encodeRequest.inputFileName}`; // Placeholder for input file path
+  const outputPath = `/tmp/encoded_${encodeRequest.inputFileName}`; // Placeholder for output file path
+
+  const job = await prisma.job.create({
+    data: {
+      tenantId,
+      userId,
+      userName,
+      type: 'EMBED',
+      status: 'RUNNING',
+      srcImagePath: inputPath,
+      imageUrl: inputPath,
+      params: encodeRequest,
+      result: {}, // 空のオブジェクトを初期値として追加
+    },
+  });
+
+  // Simulate encoding process
+  const result = `Simulated encoding result for ${inputPath} to ${outputPath}`;
+
+  await prisma.job.update({
+    where: { id: job.id },
+    data: {
+      status: 'DONE',
+      finishedAt: new Date(),
+      durationMs: new Date().getTime() - job.startedAt.getTime(),
+      result: {
+        outputFileName: outputPath,
+        watermarkApplied: encodeRequest.watermarkText || 'image watermark',
+        settings: {
+          quality: encodeRequest.quality,
+          opacity: encodeRequest.opacity,
+          position: encodeRequest.position,
+        },
       },
-    });
+    },
+  });
 
-    // Simulate encoding process
-    const result = `Simulated encoding result for ${inputPath} to ${outputPath}`;
-
-    await prisma.job.update({
-      where: { id: job.id },
-      data: {
-        status: 'DONE',
-        finishedAt: new Date(),
-        durationMs: new Date().getTime() - job.startedAt.getTime(),
-        result: { outputFileName: outputPath },
-      },
-    });
-    return NextResponse.json({ result });
-  } catch (error: unknown) {
-    console.error('Error in encoding process:', error);
-    return NextResponse.json(
-      { error: `Error encoding file: ${error instanceof Error ? error.message : 'Unknown error'}` },
-      { status: 500 }
-    );
-  }
-}
+  return NextResponse.json({
+    result,
+    outputFileName: outputPath,
+    success: true,
+  });
+});

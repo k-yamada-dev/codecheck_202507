@@ -1,40 +1,24 @@
 // GET /api/logs/[id] - ログ詳細取得API
 import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
+import { withErrorHandling } from '@/lib/errors/apiHandler';
+import { AppError, ErrorCode } from '@/lib/errors/core';
 
 const prisma = new PrismaClient();
 
-function problemJson(type: string, title: string, status: number, detail?: string) {
-  return {
-    type,
-    title,
-    status,
-    detail,
-  };
-}
+export const GET = withErrorHandling(
+  async (req: NextRequest, { params }: { params: { id: string } }) => {
+    const { id } = params;
+    if (!id) {
+      throw new AppError(ErrorCode.VALIDATION, 'Missing id', 400);
+    }
 
-export async function GET(
-  req: NextRequest,
-  { params }: { params: { id: string } }
-) {
-  const { id } = params;
-  if (!id) {
-    return NextResponse.json(
-      problemJson('about:blank', 'Missing id', 400),
-      { status: 400 }
-    );
-  }
-
-  try {
     const job = await prisma.job.findUnique({
       where: { id },
     });
 
     if (!job) {
-      return NextResponse.json(
-        problemJson('about:blank', 'Not found', 404),
-        { status: 404 }
-      );
+      throw new AppError(ErrorCode.NOT_FOUND, 'Log not found', 404);
     }
 
     // userNameを含めて返却
@@ -42,10 +26,5 @@ export async function GET(
       ...job,
       userName: job.userName,
     });
-  } catch (err: any) {
-    return NextResponse.json(
-      problemJson('about:blank', err.message || 'Internal Server Error', 500),
-      { status: 500 }
-    );
   }
-}
+);

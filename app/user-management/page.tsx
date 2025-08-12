@@ -1,210 +1,197 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import { Input } from '@/components/ui/input';
+import { format } from 'date-fns';
+
 import { Button } from '@/components/ui/button';
-
-type User = {
-  id: string;
-  tenantId: string;
-  provider: string;
-  externalId: string;
-  name: string;
-  email: string;
-  updatedAt: string;
-  roles?: string[];
-};
-
-import { ALL_ROLES, USER_ROLES } from '@/app/types/role';
+import { Input } from '@/components/ui/input';
+import { DataTable } from '@/components/DataTable';
+import { useToast } from '@/hooks/use-toast';
+import { Toaster } from '@/components/ui/toaster';
+import { UserResponse } from '@/app/api/_schemas/users';
+import {
+  useUsersGetUsers,
+  useUsersCreateUser,
+  useUsersUpdateUser,
+  useUsersDeleteUser,
+} from '@/__generated__/hooks';
+import { UserForm, UserFormValues } from '@/components/features/users/UserForm';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
+import { USER_ROLES } from '@/lib/types/role';
+import { useQueryClient } from '@tanstack/react-query';
 
 export default function UserManagementPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
-  const [users, setUsers] = useState<User[]>([]);
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [selectedUser, setSelectedUser] = useState<User | null>(null);
-  const [editName, setEditName] = useState('');
-  const [editEmail, setEditEmail] = useState('');
-  const [editRoles, setEditRoles] = useState<string[]>([]);
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<UserResponse | null>(null);
 
-  // internal-admin以外はアクセス不可
-  useEffect(() => {
+  const tenantId = session?.user?.tenantId;
+
+  // --- Data Fetching ---
+  const {
+    data: usersData,
+    isLoading,
+    error,
+  } = useUsersGetUsers(
+    { query: { tenantId: tenantId!, search, limit: 100 } },
+    { enabled: !!tenantId }
+  );
+
+  // --- Mutations ---
+  const commonMutationOptions = {
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['users', 'list'] });
+      setIsFormOpen(false);
+    },
+    onError: (e: unknown) => {
+      const message = e instanceof Error ? e.message : '不明なエラーが発生しました';
+      toast({ title: 'エラー', description: message, variant: 'destructive' });
+    },
+  };
+
+  const createUserMutation = useUsersCreateUser({
+    ...commonMutationOptions,
+    onSuccess: () => {
+      toast({ title: 'ユーザーが作成されました' });
+      commonMutationOptions.onSuccess();
+    },
+  });
+
+  const updateUserMutation = useUsersUpdateUser({
+    ...commonMutationOptions,
+    onSuccess: () => {
+      toast({ title: 'ユーザーが更新されました' });
+      commonMutationOptions.onSuccess();
+    },
+  });
+
+  const deleteUserMutation = useUsersDeleteUser({
+    ...commonMutationOptions,
+    onSuccess: () => {
+      toast({ title: 'ユーザーが削除されました' });
+      commonMutationOptions.onSuccess();
+    },
+  });
+
+  // --- Authorization ---
+  React.useEffect(() => {
     if (status === 'loading') return;
     if (!session?.user?.roles?.includes(USER_ROLES.TENANT_ADMIN)) {
-      router.replace('/'); // 権限なしはトップへリダイレクト
+      router.replace('/');
     }
   }, [session, status, router]);
 
-  // ユーザー一覧取得
-  useEffect(() => {
-    if (!session?.user?.tenantId) return;
-    setLoading(true);
-    fetch(`/api/v1/users?tenantId=${session.user.tenantId}&search=${encodeURIComponent(search)}`)
-      .then(res => res.json())
-      .then(data => setUsers(data.users || []))
-      .finally(() => setLoading(false));
-  }, [session?.user?.tenantId, search]);
+  // --- Handlers ---
+  const handleFormSubmit = (values: UserFormValues) => {
+    const { id, ...data } = values;
+    if (id) {
+      updateUserMutation.mutate({ path: { userId: id }, body: data });
+    } else {
+      createUserMutation.mutate({ body: data });
+    }
+  };
 
-  // ユーザー詳細表示
-  const handleRowClick = (user: User) => {
+  const openCreateForm = () => {
+    setSelectedUser(null);
+    setIsFormOpen(true);
+  };
+
+  const openEditForm = (user: UserResponse) => {
     setSelectedUser(user);
-    setEditName(user.name);
-    setEditEmail(user.email);
-    setEditRoles(user.roles || []);
+    setIsFormOpen(true);
   };
 
-  // 閉じる
-  const handleCloseDetail = () => {
-    setSelectedUser(null);
+  const handleDelete = (userId: string) => {
+    if (window.confirm('本当にこのユーザーを削除しますか？')) {
+      deleteUserMutation.mutate({ path: { userId } });
+    }
   };
 
-  // ユーザー削除
-  const handleDelete = async (user: User) => {
-    if (!window.confirm(`ユーザー「${user.name}」を削除しますか？`)) return;
-    await fetch(`/api/v1/users/${user.id}?tenantId=${user.tenantId}`, {
-      method: 'DELETE',
-    });
-    setUsers(users.filter(u => u.id !== user.id));
-    setSelectedUser(null);
-  };
+  // --- Table Columns ---
+  const columns: {
+    header: React.ReactNode;
+    accessor: keyof UserResponse | ((row: UserResponse) => React.ReactNode);
+  }[] = useMemo(
+    () => [
+      { header: 'ID', accessor: 'id' },
+      { header: '名前', accessor: 'name' },
+      { header: 'メール', accessor: 'email' },
+      { header: 'ロール', accessor: (row: UserResponse) => row.roles.join(', ') },
+      {
+        header: '最終更新',
+        accessor: (row: UserResponse) => format(new Date(row.updatedAt), 'yyyy-MM-dd HH:mm'),
+      },
+    ],
+    []
+  );
 
-  // ユーザー編集
-  const handleEdit = async () => {
-    if (!selectedUser) return;
-    await fetch(`/api/v1/users/${selectedUser.id}?tenantId=${selectedUser.tenantId}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: editName, email: editEmail, roles: editRoles }),
-    });
-    setUsers(
-      users.map(u =>
-        u.id === selectedUser.id ? { ...u, name: editName, email: editEmail, roles: editRoles } : u
-      )
-    );
-    setSelectedUser({ ...selectedUser, name: editName, email: editEmail, roles: editRoles });
-  };
+  const actions = (row: UserResponse) => [
+    {
+      label: '編集',
+      onClick: () => openEditForm(row),
+    },
+    {
+      label: '削除',
+      onClick: () => handleDelete(row.id),
+    },
+  ];
 
-  // ロールのトグル
-  const toggleRole = (role: string) => {
-    setEditRoles(r => (r.includes(role) ? r.filter(x => x !== role) : [...r, role]));
-  };
+  if (status === 'loading' || !tenantId) {
+    return <div>Loading...</div>;
+  }
+  if (error) {
+    const message = error instanceof Error ? error.message : '不明なエラーが発生しました';
+    return <div>エラーが発生しました: {message}</div>;
+  }
 
   return (
     <div className="container mx-auto p-4">
       <h1 className="text-2xl font-bold mb-4">ユーザー管理</h1>
-      <div className="flex gap-2 mb-4">
+      <div className="flex justify-between items-center mb-4">
         <Input
-          placeholder="名前・メール・IDで検索"
+          placeholder="名前・メールで検索..."
           value={search}
-          onChange={e => setSearch(e.target.value)}
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearch(e.target.value)}
+          className="max-w-sm"
         />
-        <Button onClick={() => setSearch('')}>クリア</Button>
+        <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
+          <DialogTrigger asChild>
+            <Button onClick={openCreateForm}>新規ユーザー作成</Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>{selectedUser ? 'ユーザー編集' : '新規ユーザー作成'}</DialogTitle>
+            </DialogHeader>
+            <UserForm
+              onSubmit={handleFormSubmit}
+              defaultValues={selectedUser}
+              isSubmitting={
+                createUserMutation.isPending ||
+                updateUserMutation.isPending ||
+                deleteUserMutation.isPending
+              }
+            />
+          </DialogContent>
+        </Dialog>
       </div>
-      <div className="overflow-x-auto">
-        <table className="min-w-full border">
-          <thead>
-            <tr>
-              <th className="border px-2 py-1">ID</th>
-              <th className="border px-2 py-1">名前</th>
-              <th className="border px-2 py-1">メール</th>
-              <th className="border px-2 py-1">provider</th>
-              <th className="border px-2 py-1">externalId</th>
-              <th className="border px-2 py-1">最終更新</th>
-            </tr>
-          </thead>
-          <tbody>
-            {loading ? (
-              <tr>
-                <td colSpan={6} className="text-center py-4">
-                  Loading...
-                </td>
-              </tr>
-            ) : users.length === 0 ? (
-              <tr>
-                <td colSpan={6} className="text-center py-4">
-                  ユーザーが見つかりません
-                </td>
-              </tr>
-            ) : (
-              users.map(user => (
-                <tr
-                  key={user.id}
-                  className="cursor-pointer hover:bg-gray-100"
-                  onClick={() => handleRowClick(user)}
-                >
-                  <td className="border px-2 py-1">{user.id}</td>
-                  <td className="border px-2 py-1">{user.name}</td>
-                  <td className="border px-2 py-1">{user.email}</td>
-                  <td className="border px-2 py-1">{user.provider}</td>
-                  <td className="border px-2 py-1">{user.externalId}</td>
-                  <td className="border px-2 py-1">{user.updatedAt}</td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
-      {/* 詳細モーダル */}
-      {selectedUser && (
-        <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
-          <div className="bg-white rounded shadow-lg p-6 min-w-[320px] max-w-lg">
-            <h2 className="text-xl font-bold mb-2">ユーザー詳細</h2>
-            <div className="mb-2">
-              <strong>ID:</strong> {selectedUser.id}
-            </div>
-            <div className="mb-2">
-              <strong>名前:</strong>
-              <Input
-                value={editName}
-                onChange={e => setEditName(e.target.value)}
-                className="ml-2 inline-block w-48"
-              />
-            </div>
-            <div className="mb-2">
-              <strong>メール:</strong>
-              <Input
-                value={editEmail}
-                onChange={e => setEditEmail(e.target.value)}
-                className="ml-2 inline-block w-48"
-              />
-            </div>
-            <div className="mb-2">
-              <strong>provider:</strong> {selectedUser.provider}
-            </div>
-            <div className="mb-2">
-              <strong>externalId:</strong> {selectedUser.externalId}
-            </div>
-            <div className="mb-2">
-              <strong>最終更新:</strong> {selectedUser.updatedAt}
-            </div>
-            <div className="mb-2">
-              <strong>ロール:</strong>
-              <div className="flex gap-2 mt-1">
-                {ALL_ROLES.map(role => (
-                  <label key={role} className="flex items-center gap-1">
-                    <input
-                      type="checkbox"
-                      checked={editRoles.includes(role)}
-                      onChange={() => toggleRole(role)}
-                    />
-                    {role}
-                  </label>
-                ))}
-              </div>
-            </div>
-            <div className="flex justify-between mt-4">
-              <Button variant="destructive" onClick={() => handleDelete(selectedUser)}>
-                削除
-              </Button>
-              <Button onClick={handleEdit}>保存</Button>
-              <Button onClick={handleCloseDetail}>閉じる</Button>
-            </div>
-          </div>
-        </div>
+      {isLoading ? (
+        <div>Loading...</div>
+      ) : (
+        <DataTable data={usersData?.users || []} columns={columns} actions={actions} />
       )}
+      <Toaster />
     </div>
   );
 }

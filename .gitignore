@@ -38,9 +38,14 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+/lib/zod/
+
+# auto-generated files
+/__generated__/
+openapi.yaml
 
 # secrets
-app/config/secrets/*
+config/secrets/*
 
 *storybook.log
 storybook-static

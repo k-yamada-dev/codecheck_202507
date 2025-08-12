@@ -9,8 +9,8 @@ const customJestConfig = {
   testEnvironment: 'jsdom',
   testMatch: ['**/__tests__/**/*.test.(ts|tsx)', '**/?(*.)+(spec|test).(ts|tsx)'],
   moduleNameMapper: {
-    '^@/app/(.*)$': '<rootDir>/app/$1',
-    '^@/components/(.*)$': '<rootDir>/app/components/$1',
+    '^@/(.*)$': '<rootDir>/$1',
+    '^@/components/(.*)$': '<rootDir>/components/$1',
     '^@/utils/(.*)$': '<rootDir>/app/utils/$1',
     '\\.(css|less|sass|scss)$': 'identity-obj-proxy',
   },

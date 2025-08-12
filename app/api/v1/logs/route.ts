@@ -1,65 +1,42 @@
 // GET /api/logs?filter=all|embed|decode&search=&startDate=&endDate=&cursor=&limit=
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient, JobType, JobStatus } from '@prisma/client';
-import { getSessionInfo } from '@/app/utils/apiAuth';
-import { JobCreateRequestDTOImpl } from '@/app/dto/JobCreateRequestDTO';
-import { JobCreateDataDTOImpl } from '@/app/dto/JobCreateDataDTO';
+import { PrismaClient, JobType, Prisma, JobStatus } from '@prisma/client';
+import { getSessionInfo } from '@/lib/utils/apiAuth';
+import { jobCreateRequestSchema } from '@/lib/dto/JobCreateRequestDTO';
+import { withErrorHandling } from '@/lib/errors/apiHandler';
 
 const prisma = new PrismaClient();
 
-export async function POST(req: NextRequest) {
-  try {
-    const body = await req.json();
-    let jobData;
-    try {
-      const dto = new JobCreateRequestDTOImpl(body);
-      jobData = dto;
-    } catch (error: any) {
-      console.error('DTO validation failed:', error?.message || 'Unknown error');
-      return NextResponse.json(
-        problemJson('about:blank', error?.message || 'Validation failed', 400),
-        { status: 400 }
-      );
-    }
-    console.log('POST /api/v1/logs called with validated DTO:', jobData);
+export const POST = withErrorHandling(async (req: NextRequest) => {
+  const body = await req.json();
+  const jobData = jobCreateRequestSchema.parse(body);
 
-    const { tenantId, userId, userName } = await getSessionInfo();
-    const jobDataDTO = new JobCreateDataDTOImpl(
-      jobData.type,
-      jobData.srcImagePath,
-      jobData.params,
+  const { tenantId, userId, userName } = await getSessionInfo();
+
+  const created = await prisma.job.create({
+    data: {
+      ...jobData,
       tenantId,
       userId,
-      userName
-    );
+      userName,
+      imageUrl: jobData.srcImagePath,
+      status: JobStatus.PENDING, // Default status
+      result: {}, // Default empty result
+      ip: req.headers.get('x-forwarded-for') ?? '127.0.0.1',
+      ua: req.headers.get('user-agent'),
+    },
+  });
 
-    const created = await prisma.job.create({
-      data: jobDataDTO,
-    });
-
-    return NextResponse.json({
+  return NextResponse.json(
+    {
       ...created,
       userName,
-    }, { status: 201 });
-  } catch (err: any) {
-    console.error('Error in POST /api/v1/logs:', err);
-    return NextResponse.json(
-      problemJson('about:blank', err.message || 'Internal Server Error', 500),
-      { status: 500 }
-    );
-  }
-}
+    },
+    { status: 201 }
+  );
+});
 
-function problemJson(type: string, title: string, status: number, detail?: string) {
-  return {
-    type,
-    title,
-    status,
-    detail,
-  };
-}
-
-export async function GET(req: NextRequest) {
+export const GET = withErrorHandling(async (req: NextRequest) => {
   const { searchParams } = new URL(req.url);
   const filter = searchParams.get('filter') ?? 'all';
   const search = searchParams.get('search') ?? '';
@@ -68,27 +45,30 @@ export async function GET(req: NextRequest) {
   const cursor = searchParams.get('cursor');
   const limit = Number(searchParams.get('limit') ?? 50);
 
-  const where: any = {};
+  const where: Prisma.JobWhereInput = {};
 
   if (filter !== 'all') {
     where.type = filter === 'embed' ? JobType.EMBED : JobType.DECODE;
   }
   if (search) {
     where.OR = [
-      { id: { contains: search } },
-      { userId: { contains: search } },
+      // { id: { contains: search } }, // UUID does not support 'contains'
+      // { userId: { contains: search } }, // UUID does not support 'contains'
       { params: { path: ['watermark_text'], string_contains: search } },
       { result: { path: ['detected_text'], string_contains: search } },
     ];
   }
-  if (startDate) {
-    where.startedAt = { ...(where.startedAt || {}), gte: new Date(startDate) };
-  }
-  if (endDate) {
-    where.startedAt = { ...(where.startedAt || {}), lte: new Date(endDate) };
+  if (startDate || endDate) {
+    where.startedAt = {};
+    if (startDate) {
+      where.startedAt.gte = new Date(startDate);
+    }
+    if (endDate) {
+      where.startedAt.lte = new Date(endDate);
+    }
   }
 
-  const queryArgs: any = {
+  const queryArgs: Prisma.JobFindManyArgs = {
     where,
     orderBy: { startedAt: 'desc' },
     take: limit + 1,
@@ -98,25 +78,18 @@ export async function GET(req: NextRequest) {
     queryArgs.skip = 1;
   }
 
-  try {
-    const jobs = await prisma.job.findMany(queryArgs);
+  const jobs = await prisma.job.findMany(queryArgs);
 
-    const hasNextPage = jobs.length > limit;
-    const jobsPage = hasNextPage ? jobs.slice(0, limit) : jobs;
+  const hasNextPage = jobs.length > limit;
+  const jobsPage = hasNextPage ? jobs.slice(0, limit) : jobs;
 
-    // userNameを含めて返却
-    return NextResponse.json({
-      jobs: jobsPage.map(job => ({
-        ...job,
-        userName: job.userName,
-      })),
-      nextCursor: hasNextPage ? jobsPage[jobsPage.length - 1].id : null,
-      hasNextPage,
-    });
-  } catch (err: any) {
-    return NextResponse.json(
-      problemJson('about:blank', err.message || 'Internal Server Error', 500),
-      { status: 500 }
-    );
-  }
-}
+  // userNameを含めて返却
+  return NextResponse.json({
+    jobs: jobsPage.map(job => ({
+      ...job,
+      userName: job.userName,
+    })),
+    nextCursor: hasNextPage ? jobsPage[jobsPage.length - 1].id : null,
+    hasNextPage,
+  });
+});

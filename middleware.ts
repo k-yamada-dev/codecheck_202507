@@ -1,12 +1,23 @@
 // middleware.ts
-import { withAuth } from 'next-auth/middleware';
+import { withAuth, NextRequestWithAuth } from 'next-auth/middleware';
 import { NextResponse } from 'next/server';
-import type { NextRequest } from 'next/server';
+import { Role } from '@prisma/client';
 
 export default withAuth(
-  function middleware(request: NextRequest) {
+  function middleware(request: NextRequestWithAuth) {
+    const { token } = request.nextauth;
+    const { pathname } = request.nextUrl;
+
+    // Check for admin route access
+    if (pathname.startsWith('/admin')) {
+      if (!token?.roles?.includes(Role.INTERNAL_ADMIN)) {
+        // Redirect to dashboard if not an internal admin
+        return NextResponse.redirect(new URL('/dashboard', request.url));
+      }
+    }
+
     const response = NextResponse.next();
-    response.headers.set('x-pathname', request.nextUrl.pathname);
+    response.headers.set('x-pathname', pathname);
     return response;
   },
   {
@@ -29,5 +40,6 @@ export const config = {
     '/watermark',
     '/log',
     '/dashboard',
+    '/admin/:path*', // Protect all admin routes
   ],
 };

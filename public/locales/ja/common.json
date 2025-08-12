@@ -1,6 +1,6 @@
 {
   "common": {
-    "appName": "AcuaSaaS",
+    "appName": "acuagraphy Online",
     "welcome": "ようこそ",
     "login": "ログイン",
     "logout": "ログアウト",
@@ -8,17 +8,41 @@
     "signIn": "ログインする",
     "signInWithKeycloak": "Keycloakでログイン",
     "cancel": "キャンセル",
+    "confirm": "確認",
     "upload": "アップロード",
+    "loading": "読み込み中",
+    "pagination": {
+      "previous": "前へ",
+      "next": "次へ"
+    },
+    "action": {
+      "cancel": "キャンセル",
+      "confirm": "実行"
+    },
+    "error": {
+      "generic": "エラーが発生しました"
+    },
     "menu": {
       "item1": "メニュー項目1"
     }
   },
   "login": {
-    "welcome": "AcuaSaaSへようこそ！",
+    "welcome": "acuagraphy Onlineへようこそ！",
     "emailPlaceholder": "メールアドレスを入力してください"
   },
+  "forgotPassword": {
+    "title": "パスワードをお忘れですか？",
+    "description": "ご登録のメールアドレスを入力してください。パスワード再設定用のリンクをお送りします。",
+    "emailPlaceholder": "メールアドレスを入力",
+    "send": "送信",
+    "sending": "送信中...",
+    "sent": "パスワード再設定メールを送信しました。メールをご確認ください。",
+    "error": "送信に失敗しました",
+    "link": "パスワードをお忘れですか？",
+    "backToLogin": "ログイン画面に戻る"
+  },
   "header": {
-    "appName": "AcuaSaaS",
+    "appName": "acuagraphy Online",
     "menu": "メニュー",
     "signedInAs": "ログイン中",
     "logout": "ログアウト"
@@ -49,9 +73,22 @@
     "uploadButton": "画像をアップロード",
     "uploadModalTitle": "画像のアップロード",
     "table": {
-      "fileName": "ファイル名",
-      "fileSize": "サイズ",
-      "uploadedAt": "アップロード日時"
+      "header": {
+        "thumbnail": "サムネイル",
+        "fileName": "ファイル名",
+        "uploader": "アップロード者",
+        "createdAt": "作成日時"
+      },
+      "noResults": "画像が見つかりません。"
+    },
+    "action": {
+      "archive": "アーカイブ"
+    },
+    "dialog": {
+      "archive": {
+        "title": "画像をアーカイブしますか？",
+        "description": "この操作は元に戻せません。アーカイブされた画像は一覧に表示されなくなりますが、システムポリシーに従って一定期間保持された後、完全に削除されます。"
+      }
     }
   },
   "watermark": {
@@ -171,5 +208,8 @@
       "decodeFailed": "透かしの検出に失敗しました",
       "unknown": "予期せぬエラーが発生しました"
     }
+  },
+  "admin": {
+    "title": "管理コンソール"
   }
 }

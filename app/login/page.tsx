@@ -4,15 +4,20 @@ import { useState, useEffect } from 'react';
 import { signIn, useSession } from 'next-auth/react';
 import { useTranslation } from 'react-i18next';
 import { useRouter } from 'next/navigation';
-import { errorLogger } from '../utils/errorLogging';
+import { handleUIError } from '@/lib/errors/uiHandler';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { PasswordInput } from '@/components/PasswordInput';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2 } from 'lucide-react';
+import { signInWithEmailAndPassword } from 'firebase/auth';
+import { auth } from '@/lib/firebase';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
   const { t } = useTranslation();
   const { status } = useSession();
   const router = useRouter();
@@ -24,16 +29,25 @@ export default function LoginPage() {
   }, [status, router]);
 
   const handleLogin = async () => {
+    setIsLoading(true);
     try {
-      const result = await signIn('keycloak', {
-        callbackUrl: '/',
-        redirect: true,
-        email: email.trim(),
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const idToken = await userCredential.user.getIdToken();
+
+      const result = await signIn('credentials', {
+        redirect: false,
+        idToken,
       });
-      console.log('SignIn result:', result);
+
+      if (result?.error) {
+        throw new Error(result.error);
+      }
+
+      router.push('/');
     } catch (error) {
-      console.error('Login error:', error);
-      errorLogger.logError(error instanceof Error ? error : new Error('Login failed'));
+      handleUIError(error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -74,9 +88,28 @@ export default function LoginPage() {
                 required
               />
             </div>
-            <Button type="submit" className="w-full">
-              {t('common.signInWithKeycloak', 'Sign in with Keycloak')}
+            <div className="space-y-2">
+              <Label htmlFor="password">{t('common.password', 'Password')}</Label>
+              <PasswordInput
+                id="password"
+                placeholder="********"
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                required
+              />
+            </div>
+            <Button type="submit" className="w-full" disabled={isLoading}>
+              {isLoading ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                t('common.signIn', 'Sign In')
+              )}
             </Button>
+            <div className="mt-2 text-center">
+              <a href="/forgot-password" className="text-sm text-blue-600 hover:underline">
+                {t('forgotPassword.link', 'パスワードをお忘れですか？')}
+              </a>
+            </div>
           </form>
         </CardContent>
       </Card>

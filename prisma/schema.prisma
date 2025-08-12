@@ -9,41 +9,29 @@ generator client {
   previewFeatures = ["postgresqlExtensions"]
 }
 
-enum Role {
-  uploader
-  downloader
-  auditor
-  tenant_admin
-  internal_admin
-}
-
-model log {
-  id        String   @id @default(cuid())
-  job_id    String   @db.Uuid
-  job       job      @relation(fields: [job_id], references: [id], name: "fk_logs__jobs")
-  action    String
-  user_id   String
-  created_at DateTime @default(now())
-
-  @@map("logs")
-}
-
-model billing_usage {
-  id         String   @id @default(cuid())
-  tenant_id  String
-  month      String
-  uploads    Int
-  api_calls  Int
-  storage_gb Float
-  amount     Float
-  updated_at DateTime @updatedAt
-
-  @@map("billing_usage")
+generator zod {
+  provider              = "prisma-zod-generator"
+  output                = "../lib/zod"
+  isGenerateSelect      = true
+  isGenerateInclude     = true
+  relationModel         = true
+  modelCase             = "camelCase"
+  modelSuffix           = "Schema"
+  imports               = "import { z } from 'zod'; import type { Prisma } from '@prisma/client';"
+  prismaJsonNullability = true
 }
 
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+}
+
+enum Role {
+  UPLOADER       @map("uploader")
+  DOWNLOADER     @map("downloader")
+  AUDITOR        @map("auditor")
+  TENANT_ADMIN   @map("tenant_admin")
+  INTERNAL_ADMIN @map("internal_admin")
 }
 
 enum JobType {
@@ -58,54 +46,142 @@ enum JobStatus {
   ERROR
 }
 
-model user {
-  id           String    @id @default(uuid()) @db.Uuid
-  tenant_id    String    @db.Uuid
-  provider     String
-  external_id  String
-  name         String
-  email        String
-  roles        String[]  @default([])
-  identity_sub String    @unique
-  is_deleted   Boolean   @default(false)
-  deleted_at   DateTime?
-  tenant_code  String?
-  user_code    String?
-  role         Role
-  created_at   DateTime  @default(now())
-  updated_at   DateTime  @updatedAt
-  jobs         job[]
+model Tenant {
+  id         String    @id @default(cuid())
+  name       String
+  tenantCode String    @unique @map("tenant_code")
+  isDeleted  Boolean   @default(false) @map("is_deleted")
+  deletedAt  DateTime? @map("deleted_at")
+  createdAt  DateTime  @default(now()) @map("created_at")
+  updatedAt  DateTime  @updatedAt @map("updated_at")
 
-  @@unique([tenant_id, provider, external_id])
-  @@unique([tenant_id, id])
+  users         User[]
+  userRoles     UserRole[]
+  jobs          Job[]
+  billingUsages BillingUsage[]
+  logs          Log[]
+
+  @@map("tenants")
+}
+
+model User {
+  id         String  @id @default(uuid()) @db.Uuid
+  tenantId   String  @map("tenant_id")
+  provider   String
+  externalId String  @map("external_id")
+  name       String
+  email      String
+  tenantCode String? @map("tenant_code")
+  userCode   String? @map("user_code")
+
+  tenant    Tenant     @relation(fields: [tenantId], references: [id])
+  jobs      Job[]
+  userRoles UserRole[]
+
+  // 監査・論理削除用カラム
+  isDeleted Boolean   @default(false) @map("is_deleted")
+  deletedAt DateTime? @map("deleted_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+
+  @@unique([tenantId, provider, externalId])
   @@map("users")
 }
 
-model job {
+model Job {
   id            String    @id @default(uuid()) @db.Uuid
-  tenant_id     String    @db.Uuid
-  user_id       String    @db.Uuid
-  user_name     String
+  tenantId      String    @map("tenant_id")
+  userId        String    @map("user_id") @db.Uuid
+  userName      String    @map("user_name")
   type          JobType
   status        JobStatus
-  started_at    DateTime  @default(now()) @db.Timestamptz(6)
-  finished_at   DateTime? @db.Timestamptz(6)
-  duration_ms   Int?
-  thumbnail_path String?
-  src_image_path String
+  startedAt     DateTime  @default(now()) @map("started_at") @db.Timestamptz(6)
+  finishedAt    DateTime? @map("finished_at") @db.Timestamptz(6)
+  durationMs    Int?      @map("duration_ms")
+  thumbnailPath String?   @map("thumbnail_path")
+  srcImagePath  String    @map("src_image_path")
   params        Json
   result        Json
   ip            String?   @db.Inet
   ua            String?
-  created_at    DateTime  @default(now()) @db.Timestamptz(6)
-  image_url     String
-  result_url    String?
+  isArchived    Boolean   @default(false) @map("is_archived")
+  archivedAt    DateTime? @map("archived_at")
+  imageUrl      String    @map("image_url")
+  resultUrl     String?   @map("result_url")
   watermark     String?
   confidence    Float?
 
-  user user  @relation(fields: [tenant_id, user_id], references: [tenant_id, id])
-  logs log[] @relation("fk_logs__jobs")
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+  user   User   @relation(fields: [userId], references: [id])
+  logs   Log[]
 
-  @@index([tenant_id, type, started_at(sort: Desc)], name: "idx_jobs__tenant_type_started_at")
+  // 監査・論理削除用カラム
+  isDeleted Boolean   @default(false) @map("is_deleted")
+  deletedAt DateTime? @map("deleted_at")
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime  @updatedAt @map("updated_at")
+
+  @@index([tenantId, type, startedAt(sort: Desc)], map: "idx_jobs__tenant_type_started_at")
   @@map("jobs")
+}
+
+model Log {
+  id       String @id @default(cuid())
+  tenantId String @map("tenant_id")
+  jobId    String @map("job_id") @db.Uuid
+  action   String
+  userId   String @map("user_id")
+  details  Json?
+
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+  job    Job    @relation(fields: [jobId], references: [id])
+
+  // 監査・論理削除用カラム
+  isDeleted Boolean   @default(false) @map("is_deleted")
+  deletedAt DateTime? @map("deleted_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+
+  @@map("logs")
+}
+
+model BillingUsage {
+  id          String    @id @default(cuid())
+  tenantId    String    @map("tenant_id")
+  month       String
+  uploads     Int
+  apiCalls    Int       @map("api_calls")
+  storageGb   Float     @map("storage_gb")
+  amount      Float
+  isFinalized Boolean   @default(false) @map("is_finalized")
+  finalizedAt DateTime? @map("finalized_at")
+
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+
+  // 監査・論理削除用カラム
+  isDeleted Boolean   @default(false) @map("is_deleted")
+  deletedAt DateTime? @map("deleted_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+
+  @@map("billing_usages")
+}
+
+model UserRole {
+  userId     String   @map("user_id") @db.Uuid
+  tenantId   String   @map("tenant_id")
+  role       Role
+  assignedAt DateTime @default(now()) @map("assigned_at")
+
+  user   User   @relation(fields: [userId], references: [id])
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+
+  // 監査・論理削除用カラム
+  isDeleted Boolean   @default(false) @map("is_deleted")
+  deletedAt DateTime? @map("deleted_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+
+  @@id([userId, tenantId, role])
+  @@map("user_roles")
 }
