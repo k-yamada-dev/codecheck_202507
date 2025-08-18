@@ -4,8 +4,8 @@
   "private": true,
   "packageManager": "pnpm@10.12.3",
   "scripts": {
-    "__dev": "next dev",
-    "dev": "next dev -p 3001",
+    "dev": "next dev",
+    "___dev": "next dev -p 3001",
     "prebuild": "prisma generate",
     "build": "pnpm gen:auto && next build",
     "start": "next start",
@@ -40,6 +40,7 @@
     ]
   },
   "dependencies": {
+    "@google-cloud/pubsub": "^5.2.0",
     "@google-cloud/storage": "^7.15.2",
     "@hookform/resolvers": "^5.1.1",
     "@mui/material": "^7.2.0",

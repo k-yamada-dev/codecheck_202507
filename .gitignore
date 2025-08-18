@@ -9,6 +9,7 @@
 !.yarn/plugins
 !.yarn/releases
 !.yarn/versions
+.pnpm-store/*
 
 # testing
 /coverage
@@ -53,3 +54,4 @@ storybook-static
 
 # doc
 doc/*
+

@@ -106,6 +106,7 @@
 - 設計メモ:doc/acuagraphy_online_design.md
 - 管理コンソールの方針:doc/admin_console_design.md
 - エラーハンドリング:doc/エラーハンドリング方針（ui_api統一）.md
+- JOB実装ガイドライン:doc/vs*code＋wsl*ローカル実行＆job実装ガイド（acuagraphy_online）.md
 
 # ---- 出力方針 --------------------------------------------------------------
 

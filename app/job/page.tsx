@@ -36,6 +36,13 @@ export default function JobPage() {
         apiClient.jobsGetJobs({ query: { ...filters, cursor: pageParam } }),
       initialPageParam: undefined,
       getNextPageParam: lastPage => lastPage.nextCursor,
+      refetchInterval: query => {
+        const jobs = query.state.data?.pages.flatMap(page => page.jobs) ?? [];
+        const hasActiveJobs = jobs.some(
+          job => job.status === 'PENDING' || job.status === 'RUNNING'
+        );
+        return hasActiveJobs ? 5000 : false;
+      },
     });
 
   const deleteJobMutation = useJobsDeleteJob();

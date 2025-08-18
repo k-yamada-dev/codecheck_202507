@@ -16,7 +16,7 @@ export async function GET(req: NextRequest) {
     if (keycloakIssuer) {
       const logOutUrl = new URL(`${keycloakIssuer}/protocol/openid-connect/logout`);
       // NEXTAUTH_URL をベースにリダイレクトURIを生成
-      const baseUri = process.env.NEXTAUTH_URL || 'http://localhost:3001';
+      const baseUri = process.env.NEXTAUTH_URL || 'http://localhost:3000';
       const postLogoutRedirectUri = new URL('/login', baseUri).toString();
 
       logOutUrl.searchParams.set('post_logout_redirect_uri', postLogoutRedirectUri);

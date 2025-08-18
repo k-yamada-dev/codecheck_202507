@@ -24,6 +24,8 @@ export const CreateJobResponseSchema = z.object({
   srcImagePath: z.string(),
   params: z.record(z.string(), z.any()),
   result: z.record(z.string(), z.any()),
+  errorCode: z.string().nullable(),
+  errorMessage: z.string().nullable(),
   ip: z.string().nullable(),
   ua: z.string().nullable(),
   isDeleted: z.boolean(),

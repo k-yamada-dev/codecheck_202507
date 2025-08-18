@@ -102,6 +102,8 @@ model Job {
   srcImagePath  String    @map("src_image_path")
   params        Json
   result        Json
+  errorCode     String?
+  errorMessage  String?
   ip            String?   @db.Inet
   ua            String?
   isArchived    Boolean   @default(false) @map("is_archived")

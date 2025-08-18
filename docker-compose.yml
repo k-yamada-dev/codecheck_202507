@@ -15,5 +15,51 @@ services:
       test: ['CMD-SHELL', 'pg_isready -U postgres']
       interval: 5s
       retries: 5
+
+  pubsub:
+    build:
+      context: .
+      dockerfile: docker/pubsub.Dockerfile
+    ports: ['8085:8085']
+    restart: unless-stopped
+
+  api:
+    profiles: ['api']
+    build:
+      context: .
+      dockerfile: docker/api.Dockerfile
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/acuas_dev
+      PUBSUB_EMULATOR_HOST: pubsub:8085
+      PUBSUB_PROJECT_ID: local-dev
+      PUBSUB_TOPIC_JOBS: jobs
+      NEXT_PUBLIC_API_BASE: http://localhost:3000
+      GCS_BUCKET: local-bucket
+    volumes:
+      - .:/work
+    working_dir: /work
+    command: sh -c "pnpm i && pnpm prisma migrate deploy && pnpm dev --port 3000 --hostname 0.0.0.0"
+    ports: ['3000:3000']
+    depends_on: [db, pubsub]
+
+  worker:
+    build:
+      context: .
+      dockerfile: docker/worker.Dockerfile
+    volumes:
+      - .:/work
+    working_dir: /work
+    environment:
+      NODE_ENV: development
+      CI: 'true'
+      HUSKY: '0'
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/acuas_dev
+      PUBSUB_PROJECT_ID: local-dev
+      PUBSUB_TOPIC_JOBS: jobs
+      PUBSUB_EMULATOR_HOST: pubsub:8085
+      WORKER_CONCURRENCY: '1'
+      JOB_VISIBILITY_TIMEOUT_SEC: '600'
+    depends_on: [db, pubsub]
+
 volumes:
   db_data:
