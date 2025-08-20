@@ -2,6 +2,7 @@
 
 # dependencies
 /node_modules
+**/node_modules
 /.pnp
 .pnp.*
 .yarn/*
@@ -43,6 +44,9 @@ next-env.d.ts
 
 # auto-generated files
 /__generated__/
+generated/*
+worker/generated/*
+worker/node_modules/*
 openapi.yaml
 
 # secrets
@@ -50,6 +54,8 @@ config/secrets/*
 
 *storybook.log
 storybook-static
+
+
 
 
 # doc

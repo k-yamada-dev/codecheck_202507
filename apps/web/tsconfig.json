@@ -1,0 +1,16 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "jsx": "preserve",
+    "plugins": [{ "name": "next" }],
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./*"],
+      "@acme/api-client": ["../../packages/api-client/src/index.ts"],
+      "@acme/contracts": ["../../packages/contracts/src/index.ts"],
+      "@acme/db": ["../../packages/db/src/index.ts"]
+    }
+  },
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
+  "exclude": ["node_modules", ".next", "prisma", "apps/worker/**"]
+}

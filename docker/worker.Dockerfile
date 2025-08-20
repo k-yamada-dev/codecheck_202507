@@ -14,8 +14,10 @@ COPY package.json ./
 COPY pnpm-lock.yaml ./
 COPY worker/package.json ./worker/
 COPY patches ./patches
+# postinstallでprisma generateが実行されるため、スキーマファイルを先にコピー
+COPY prisma ./prisma
 
-# 依存関係をインストール
+# 依存関係をインストール (ここでpostinstallが実行される)
 RUN pnpm install --frozen-lockfile
 
 # アプリケーションの残りのファイルをコピー
