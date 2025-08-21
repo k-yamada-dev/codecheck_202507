@@ -1,7 +1,10 @@
-import { PrismaClient, Role } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
 import type { Prisma } from '@prisma/client';
+import { USER_ROLE, type RoleType } from '@acme/contracts';
 import { firebaseAdmin } from '@/lib/firebaseAdmin';
 import { AppError, ErrorCode } from '@/lib/errors/core';
+
+void USER_ROLE;
 
 const prisma = new PrismaClient();
 
@@ -14,7 +17,7 @@ export async function inviteUser({
   tenantId: string;
   email: string;
   name: string;
-  role: Role;
+  role: RoleType;
 }) {
   // 既存ユーザー重複チェック
   const exists = await prisma.user.findFirst({
@@ -69,7 +72,7 @@ export async function createUser({
   name: string;
   externalId: string;
   provider: string;
-  roles: Role[];
+  roles: RoleType[];
 }) {
   // 既存ユーザー重複チェック
   const exists = await tx.user.findFirst({
@@ -131,7 +134,7 @@ export async function assignRole({
 }: {
   userId: string;
   tenantId: string;
-  role: Role;
+  role: RoleType;
 }) {
   // 既存ロール削除（単一ロール運用の場合）
   await prisma.userRole.deleteMany({
@@ -174,7 +177,7 @@ export async function createGipUserAndDbUser({
   tenantId: string;
   email: string;
   name: string;
-  roles: Role[];
+  roles: RoleType[];
 }) {
   // 1. Firebase Authでユーザーを検索・作成
   let firebaseUser;

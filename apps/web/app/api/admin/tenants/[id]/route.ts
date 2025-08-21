@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@acme/db';
-import { Role } from '@prisma/client';
+import { USER_ROLE, type RoleType } from '@acme/contracts';
 import { withErrorHandling } from '@/lib/errors/apiHandler';
 import { AppError, ErrorCode } from '@/lib/errors/core';
 
@@ -17,7 +17,8 @@ export const PATCH = withErrorHandling(
     const session = await getServerSession(authOptions);
     const { id: tenantId } = await params;
 
-    if (session?.user?.role !== Role.INTERNAL_ADMIN) {
+    const roles = session?.user?.roles as RoleType[] | undefined;
+    if (!roles?.includes(USER_ROLE.INTERNAL_ADMIN)) {
       throw new AppError(ErrorCode.AUTH_UNAUTHORIZED, 'Forbidden', 403);
     }
 
@@ -51,7 +52,8 @@ export const DELETE = withErrorHandling(
     const session = await getServerSession(authOptions);
     const { id: tenantId } = await params;
 
-    if (session?.user?.role !== Role.INTERNAL_ADMIN) {
+    const roles = session?.user?.roles as RoleType[] | undefined;
+    if (!roles?.includes(USER_ROLE.INTERNAL_ADMIN)) {
       throw new AppError(ErrorCode.AUTH_UNAUTHORIZED, 'Forbidden', 403);
     }
 
