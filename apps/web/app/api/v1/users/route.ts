@@ -1,14 +1,15 @@
 import { createRouteHandler } from '@/lib/ts-rest/next-handler';
-import { contract } from '@acme/contracts';
+import { contract, UserListQuerySchema } from '@acme/contracts';
 import { prisma } from '@acme/db';
 import { getSessionInfo } from '@/lib/utils/apiAuth';
 import { createGipUserAndDbUser } from '@/lib/userService';
+import { ZodError } from 'zod';
 
 const router = createRouteHandler(contract.users, {
   getUsers: async ({ query }: { query: any }) => {
     try {
       const session = await getSessionInfo();
-      const { page, limit, search } = query;
+      const { page, limit, search } = UserListQuerySchema.parse(query);
 
       const where: any = {
         tenantId: session.tenantId,
@@ -56,6 +57,15 @@ const router = createRouteHandler(contract.users, {
         },
       };
     } catch (error) {
+      if (error instanceof ZodError) {
+        return {
+          status: 400,
+          body: {
+            users: [],
+            total: 0,
+          },
+        };
+      }
       console.error('Users API error:', error);
       return {
         status: 500,
