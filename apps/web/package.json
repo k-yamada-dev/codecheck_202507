@@ -36,6 +36,7 @@
     "@tanstack/react-query-devtools": "^5.83.0",
     "@tanstack/react-table": "^8.21.3",
     "@ts-rest/core": "^3.52.1",
+    "@ts-rest/express": "3.52.1",
     "@ts-rest/next": "^3.52.1",
     "@ts-rest/react-query": "^3.52.1",
     "class-variance-authority": "^0.7.1",
