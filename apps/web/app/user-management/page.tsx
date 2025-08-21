@@ -21,7 +21,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import { USER_ROLES } from '@/lib/types/role';
+import { USER_ROLE } from '@acme/contracts';
 
 // Define types locally since they may not be exported from contracts
 type UserResponse = {
@@ -121,7 +121,7 @@ export default function UserManagementPage() {
   // --- Authorization ---
   React.useEffect(() => {
     if (status === 'loading') return;
-    if (!session?.user?.roles?.includes(USER_ROLES.TENANT_ADMIN)) {
+    if (!session?.user?.roles?.includes(USER_ROLE.TENANT_ADMIN)) {
       router.replace('/');
     }
   }, [session, status, router]);
