@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { JobTypeSchema, JobStatusSchema } from '../enums/job';
 
 // Logs Query Schema
 export const GetLogsQuerySchema = z.object({
@@ -13,8 +14,8 @@ export const GetLogsQuerySchema = z.object({
 // Log Item Schema
 export const LogItemSchema = z.object({
   id: z.string().uuid(),
-  type: z.string(),
-  status: z.string(),
+  type: JobTypeSchema,
+  status: JobStatusSchema,
   tenantId: z.string().uuid(),
   userId: z.string().uuid(),
   userName: z.string(),
@@ -41,7 +42,7 @@ export const GetLogsResponseSchema = z.object({
 
 // Job Create Request Schema
 export const JobCreateRequestSchema = z.object({
-  type: z.enum(['EMBED', 'DECODE']),
+  type: JobTypeSchema,
   srcImagePath: z.string().min(1),
   params: z.record(z.string(), z.any()).optional(),
 });
