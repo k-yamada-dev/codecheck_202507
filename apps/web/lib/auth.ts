@@ -3,6 +3,7 @@ import CredentialsProvider from 'next-auth/providers/credentials';
 import { prisma } from '@acme/db';
 import { firebaseAdmin } from '@/lib/firebaseAdmin';
 import { getConfig } from '@/config/config';
+import type { RoleType } from '@acme/contracts';
 
 const config = getConfig();
 
@@ -97,7 +98,7 @@ export const authOptions: NextAuthOptions = {
             role: true,
           },
         });
-        token.roles = userRoles.map(ur => ur.role);
+        token.roles = userRoles.map(ur => ur.role as RoleType);
       }
       return token;
     },
@@ -109,7 +110,7 @@ export const authOptions: NextAuthOptions = {
         session.user.tenantId = token.tenantId as string;
       }
       if (token.roles) {
-        session.user.roles = token.roles as string[];
+        session.user.roles = token.roles as RoleType[];
       }
       return session;
     },
