@@ -11,7 +11,12 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Job, JobStatus } from '@prisma/client';
+import {
+  JobListItem as Job,
+  JobStatus,
+  JOB_TYPE,
+  JOB_STATUS,
+} from '@acme/contracts';
 import { format } from 'date-fns';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { ImageCell } from '@/components/common/image-cell';
@@ -26,13 +31,13 @@ const LogTable: React.FC<LogTableProps> = ({ jobs = [] }) => {
 
   const getStatusVariant = (status: JobStatus) => {
     switch (status) {
-      case JobStatus.DONE:
+      case JOB_STATUS.DONE:
         return 'default';
-      case JobStatus.RUNNING:
+      case JOB_STATUS.RUNNING:
         return 'secondary';
-      case JobStatus.ERROR:
+      case JOB_STATUS.ERROR:
         return 'destructive';
-      case JobStatus.PENDING:
+      case JOB_STATUS.PENDING:
       default:
         return 'outline';
     }
@@ -46,7 +51,7 @@ const LogTable: React.FC<LogTableProps> = ({ jobs = [] }) => {
 
   const getWatermarkText = (job: Job) => {
     if (
-      job.type === 'EMBED' &&
+      job.type === JOB_TYPE.EMBED &&
       job.params &&
       typeof job.params === 'object' &&
       job.params !== null
@@ -57,7 +62,7 @@ const LogTable: React.FC<LogTableProps> = ({ jobs = [] }) => {
       }
     }
     if (
-      job.type === 'DECODE' &&
+      job.type === JOB_TYPE.DECODE &&
       job.result &&
       typeof job.result === 'object' &&
       job.result !== null
@@ -72,7 +77,7 @@ const LogTable: React.FC<LogTableProps> = ({ jobs = [] }) => {
 
   const getModeStrength = (job: Job) => {
     if (
-      job.type === 'EMBED' &&
+      job.type === JOB_TYPE.EMBED &&
       job.params &&
       typeof job.params === 'object' &&
       job.params !== null
@@ -84,7 +89,7 @@ const LogTable: React.FC<LogTableProps> = ({ jobs = [] }) => {
       }
     }
     if (
-      job.type === 'DECODE' &&
+      job.type === JOB_TYPE.DECODE &&
       job.result &&
       typeof job.result === 'object' &&
       job.result !== null
