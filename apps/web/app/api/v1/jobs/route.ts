@@ -3,7 +3,7 @@ import { promisify } from 'util';
 
 import { contract, JOB_STATUS, JOB_TYPE } from '@acme/contracts';
 import { jobsRepo, JobListItemFromRepo } from '@acme/db';
-import { createNextRoute } from '@ts-rest/next';
+import { createRouteHandler } from '@/lib/ts-rest/next-handler';
 
 import { getSessionInfo } from '@/lib/utils/apiAuth';
 
@@ -50,7 +50,7 @@ async function processJob(jobId: string) {
   }
 }
 
-const router = createNextRoute(contract.jobs, {
+const router = createRouteHandler(contract.jobs, {
   createJob: async ({ body, req }) => {
     const { tenantId, userId, userName } = await getSessionInfo();
 

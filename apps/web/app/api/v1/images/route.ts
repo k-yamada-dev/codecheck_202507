@@ -1,10 +1,10 @@
-import { createNextRoute } from '@ts-rest/next';
+import { createRouteHandler } from '@/lib/ts-rest/next-handler';
 import { contract, JOB_TYPE } from '@acme/contracts';
 import { jobsRepo } from '@acme/db';
 import { getSessionInfo } from '@/lib/utils/apiAuth';
 import { getSignedUrl } from '@/lib/gcs/storage.server';
 
-const router = createNextRoute(contract.images, {
+const router = createRouteHandler(contract.images, {
   getImages: async ({ query }: { query: any }) => {
     try {
       // Get session information

@@ -1,9 +1,9 @@
-import { createNextRoute } from '@ts-rest/next';
+import { createRouteHandler } from '@/lib/ts-rest/next-handler';
 import { contract, JOB_TYPE, JOB_STATUS } from '@acme/contracts';
 import { jobsRepo } from '@acme/db';
 import { getSessionInfo } from '@/lib/utils/apiAuth';
 
-const router = createNextRoute(contract.logs, {
+const router = createRouteHandler(contract.logs, {
   getLogs: async ({ query }: { query: any }) => {
     try {
       const { tenantId } = await getSessionInfo();
