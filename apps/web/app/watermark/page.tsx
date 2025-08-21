@@ -74,42 +74,48 @@ const WatermarkPage: React.FC = () => {
     if (!jobsData) return [];
 
     return jobsData.pages.flatMap((page) =>
-      page.jobs.map((job: JobListItem) => ({
-        id: job.id,
-        file: new File([], job.srcImagePath?.split('/').pop() || 'unknown.jpg'),
-        previewUrl: job.thumbnailPath || job.srcImagePath || '',
-        settings: {
-          text:
-            ((job.params as Record<string, unknown>)
-              ?.watermarkText as string) || '',
-          encodeMode:
-            ((job.params as Record<string, unknown>)?.encodeMode as string) ||
-            '通常',
-          jpegEmbedMode:
-            ((job.params as Record<string, unknown>)
-              ?.jpegEmbedMode as string) || '通常',
-          strength:
-            ((job.params as Record<string, unknown>)?.strength as number) || 3,
-          blockSize:
-            ((job.params as Record<string, unknown>)?.blockSize as string) ||
-            '自動設定',
-          jpegQuality:
-            ((job.params as Record<string, unknown>)?.jpegQuality as number) ||
-            90,
-        } as WatermarkSettings,
-        status:
-          job.status === 'DONE'
-            ? 'success'
-            : job.status === 'ERROR'
-              ? 'error'
-              : job.status === 'RUNNING'
-                ? 'running'
-                : 'pending',
-        jobId: job.id,
-        uploadedFileUrl: job.srcImagePath || undefined,
-        thumbnailPath: job.thumbnailPath || undefined,
-        isUploaded: !!job.thumbnailPath,
-      }))
+      page.jobs
+        ? page.jobs.map((job: JobListItem) => ({
+            id: job.id,
+            file: new File(
+              [],
+              job.srcImagePath?.split('/').pop() || 'unknown.jpg'
+            ),
+            previewUrl: job.thumbnailPath || job.srcImagePath || '',
+            settings: {
+              text:
+                ((job.params as Record<string, unknown>)
+                  ?.watermarkText as string) || '',
+              encodeMode:
+                ((job.params as Record<string, unknown>)
+                  ?.encodeMode as string) || '通常',
+              jpegEmbedMode:
+                ((job.params as Record<string, unknown>)
+                  ?.jpegEmbedMode as string) || '通常',
+              strength:
+                ((job.params as Record<string, unknown>)?.strength as number) ||
+                3,
+              blockSize:
+                ((job.params as Record<string, unknown>)
+                  ?.blockSize as string) || '自動設定',
+              jpegQuality:
+                ((job.params as Record<string, unknown>)
+                  ?.jpegQuality as number) || 90,
+            } as WatermarkSettings,
+            status:
+              job.status === 'DONE'
+                ? 'success'
+                : job.status === 'ERROR'
+                  ? 'error'
+                  : job.status === 'RUNNING'
+                    ? 'running'
+                    : 'pending',
+            jobId: job.id,
+            uploadedFileUrl: job.srcImagePath || undefined,
+            thumbnailPath: job.thumbnailPath || undefined,
+            isUploaded: !!job.thumbnailPath,
+          }))
+        : []
     );
   }, [jobsData]);
 

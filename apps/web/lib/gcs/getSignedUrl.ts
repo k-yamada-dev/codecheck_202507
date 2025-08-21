@@ -1,4 +1,4 @@
-// 'use server';
+'use server';
 
 import { getStorage } from 'firebase-admin/storage';
 import { firebaseAdmin } from '@/lib/firebaseAdmin';
@@ -14,7 +14,8 @@ export async function getSignedUrl(
   { expiresInSec = 300 }: { expiresInSec?: number } = {}
 ): Promise<string> {
   // バケット名を明示的に指定
-  const bucketName = process.env.GCS_BUCKET_NAME || process.env.NEXT_PUBLIC_GCS_BUCKET_NAME;
+  const bucketName =
+    process.env.GCS_BUCKET_NAME || process.env.NEXT_PUBLIC_GCS_BUCKET_NAME;
   const bucket = getStorage(firebaseAdmin.app()).bucket(bucketName);
   const file = bucket.file(objectPath);
 

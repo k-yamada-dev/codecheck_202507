@@ -18,7 +18,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { MoreHorizontal } from 'lucide-react';
 
-interface DataTableProps<T> {
+interface DataTableProps<T extends { id?: string }> {
   data: T[];
   columns: Array<{
     header: React.ReactNode;
@@ -32,7 +32,11 @@ interface DataTableProps<T> {
   }>;
 }
 
-export function DataTable<T>({ data, columns, actions }: DataTableProps<T>) {
+export function DataTable<T extends { id?: string }>({
+  data,
+  columns,
+  actions,
+}: DataTableProps<T>) {
   return (
     <Table>
       <TableHeader>
@@ -46,15 +50,18 @@ export function DataTable<T>({ data, columns, actions }: DataTableProps<T>) {
         </TableRow>
       </TableHeader>
       <TableBody>
-        {data.length === 0 ? (
+        {!data || data.length === 0 ? (
           <TableRow>
-            <TableCell colSpan={columns.length + (actions ? 1 : 0)} className="text-center">
+            <TableCell
+              colSpan={columns.length + (actions ? 1 : 0)}
+              className="text-center"
+            >
               No data available.
             </TableCell>
           </TableRow>
         ) : (
           data.map((row, rowIndex) => (
-            <TableRow key={rowIndex}>
+            <TableRow key={row.id || rowIndex}>
               {columns.map((col, colIndex) => (
                 <TableCell key={colIndex}>
                   {typeof col.accessor === 'function'
@@ -71,15 +78,22 @@ export function DataTable<T>({ data, columns, actions }: DataTableProps<T>) {
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent>
-                      {actions(row).map((action, actionIndex) => (
-                        <DropdownMenuItem
-                          key={actionIndex}
-                          onClick={action.onClick}
-                          disabled={action.disabled}
-                        >
-                          {action.label}
-                        </DropdownMenuItem>
-                      ))}
+                      {actions &&
+                        (() => {
+                          const rowActions = actions(row);
+                          return (
+                            Array.isArray(rowActions) &&
+                            rowActions.map((action, actionIndex) => (
+                              <DropdownMenuItem
+                                key={actionIndex}
+                                onClick={action.onClick}
+                                disabled={action.disabled}
+                              >
+                                {action.label}
+                              </DropdownMenuItem>
+                            ))
+                          );
+                        })()}
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </TableCell>

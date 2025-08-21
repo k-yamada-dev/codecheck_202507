@@ -44,6 +44,11 @@ const jobListItemSelect = {
   srcImagePath: true,
   thumbnailPath: true,
   params: true,
+  result: true,
+  startedAt: true,
+  durationMs: true,
+  userName: true,
+  userId: true,
 } satisfies Prisma.JobSelect;
 
 // Export the inferred type for use in the API layer
