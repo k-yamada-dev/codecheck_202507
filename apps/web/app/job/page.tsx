@@ -25,6 +25,7 @@ import type {
   CreateJobRequest,
   GetJobsResponse,
 } from '@acme/contracts';
+import { JOB_STATUS } from '@acme/contracts';
 import { toast } from 'sonner';
 import { handleUIError } from '@/lib/errors/uiHandler';
 
@@ -58,7 +59,8 @@ export default function JobPage() {
         query.state.data?.pages.flatMap((page: GetJobsResponse) => page.jobs) ??
         [];
       const hasActiveJobs = jobs.some(
-        (job) => job.status === 'PENDING' || job.status === 'RUNNING'
+        (job) =>
+          job.status === JOB_STATUS.PENDING || job.status === JOB_STATUS.RUNNING
       );
       return hasActiveJobs ? 5000 : false;
     },
