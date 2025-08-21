@@ -1,10 +1,10 @@
-import { createNextRoute } from '@ts-rest/next';
+import { createRouteHandler } from '@/lib/ts-rest/next-handler';
 import { contract } from '@acme/contracts';
 import { prisma } from '@acme/db';
 import { getSessionInfo } from '@/lib/utils/apiAuth';
 import { createGipUserAndDbUser } from '@/lib/userService';
 
-const router = createNextRoute(contract.users, {
+const router = createRouteHandler(contract.users, {
   getUsers: async ({ query }: { query: any }) => {
     try {
       const session = await getSessionInfo();

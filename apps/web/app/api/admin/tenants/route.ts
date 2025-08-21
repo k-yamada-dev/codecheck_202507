@@ -1,11 +1,11 @@
-import { createNextRoute } from '@ts-rest/next';
+import { createRouteHandler } from '@/lib/ts-rest/next-handler';
 import { contract, USER_ROLE } from '@acme/contracts';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@acme/db';
 import { firebaseAdmin } from '@/lib/firebaseAdmin';
 
-const router = createNextRoute(contract.admin, {
+const router = createRouteHandler(contract.admin, {
   getTenants: async () => {
     try {
       const session = await getServerSession(authOptions);

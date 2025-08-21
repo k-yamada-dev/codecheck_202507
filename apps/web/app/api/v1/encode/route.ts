@@ -1,9 +1,9 @@
-import { createNextRoute } from '@ts-rest/next';
+import { createRouteHandler } from '@/lib/ts-rest/next-handler';
 import { contract, JOB_TYPE, JOB_STATUS } from '@acme/contracts';
 import { jobsRepo } from '@acme/db';
 import { getSessionInfo } from '@/lib/utils/apiAuth';
 
-const router = createNextRoute(contract.encode, async ({ body }: { body: any }) => {
+export const POST = createRouteHandler(contract.encode, async ({ body }: { body: any }) => {
   try {
     // Get session information
     const { tenantId, userId, userName } = await getSessionInfo();
@@ -60,5 +60,3 @@ const router = createNextRoute(contract.encode, async ({ body }: { body: any }) 
     };
   }
 });
-
-export const POST = router;
