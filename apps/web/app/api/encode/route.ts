@@ -3,7 +3,7 @@ import { getServerSession } from 'next-auth/next';
 import { prisma } from '@acme/db';
 import { publishJob } from '@/lib/pubsub';
 import { authOptions } from '@/lib/auth';
-import { env } from '@/lib/env.server';
+import { CreateJobRequestSchema, JOB_TYPE, JOB_STATUS } from '@acme/contracts';
 
 export async function POST(req: NextRequest) {
   try {
@@ -18,29 +18,20 @@ export async function POST(req: NextRequest) {
     }
     const { id: userId, tenantId, name: userName } = session.user;
 
-    const body = await req.json();
-    const { imageId, watermark, options } = body;
-
-    if (!imageId || !watermark) {
-      return NextResponse.json(
-        { error: 'imageId and watermark are required' },
-        { status: 400 }
-      );
-    }
-
-    const imagePath = `${tenantId}/${userId}/${imageId}`;
-    const gcsUri = `gs://${env.GCS_BUCKET_NAME}/${imagePath}`;
+    const { srcImagePath, payload } = CreateJobRequestSchema.omit({
+      type: true,
+    }).parse(await req.json());
 
     const job = await prisma.job.create({
       data: {
-        type: 'EMBED',
-        status: 'PENDING',
-        imageUrl: gcsUri,
-        params: { watermark, ...options },
+        type: JOB_TYPE.EMBED,
+        status: JOB_STATUS.PENDING,
+        imageUrl: srcImagePath,
+        params: payload,
         tenantId: tenantId,
         userId: userId,
         userName: userName || '',
-        srcImagePath: gcsUri,
+        srcImagePath: srcImagePath,
         result: {},
       },
     });
@@ -48,10 +39,13 @@ export async function POST(req: NextRequest) {
     await publishJob({ jobId: job.id, tenantId: tenantId });
 
     return NextResponse.json({ jobId: job.id }, { status: 202 });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error creating job:', error);
     return NextResponse.json(
-      { error: 'Failed to create job', details: error.message },
+      {
+        error: 'Failed to create job',
+        details: error instanceof Error ? error.message : String(error),
+      },
       { status: 500 }
     );
   }
