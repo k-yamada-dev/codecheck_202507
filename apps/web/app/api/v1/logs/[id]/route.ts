@@ -1,10 +1,9 @@
 // GET /api/logs/[id] - ログ詳細取得API
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '@acme/db';
 import { withErrorHandling } from '@/lib/errors/apiHandler';
 import { AppError, ErrorCode } from '@/lib/errors/core';
 
-const prisma = new PrismaClient();
 
 export const GET = withErrorHandling(
   async (req: NextRequest, { params }: { params: { id: string } }) => {
