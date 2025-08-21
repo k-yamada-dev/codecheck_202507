@@ -47,10 +47,15 @@ export default function JobPage() {
   } = useInfiniteQuery({
     queryKey: ['jobs', 'all', filters],
     queryFn: async ({ pageParam }) => {
-      const response = await apiClient.jobs.getJobs({
-        query: { ...filters, cursor: pageParam as string | undefined },
-      });
-      return response.body as GetJobsResponse;
+      try {
+        const response = await apiClient.jobs.getJobs({
+          query: { ...filters, cursor: pageParam as string | undefined },
+        });
+        return response.body as GetJobsResponse;
+      } catch (e) {
+        console.error('Failed to fetch jobs:', e);
+        throw e;
+      }
     },
     initialPageParam: undefined,
     getNextPageParam: (lastPage: GetJobsResponse) => lastPage.nextCursor,
@@ -60,7 +65,8 @@ export default function JobPage() {
         [];
       const hasActiveJobs = jobs.some(
         (job) =>
-          job.status === JOB_STATUS.PENDING || job.status === JOB_STATUS.RUNNING
+          job?.status === JOB_STATUS.PENDING ||
+          job?.status === JOB_STATUS.RUNNING
       );
       return hasActiveJobs ? 5000 : false;
     },
@@ -105,7 +111,11 @@ export default function JobPage() {
 
   const jobs = useMemo(
     () =>
-      (data?.pages as GetJobsResponse[])?.flatMap((page) => page.jobs) ?? [],
+      (data?.pages as GetJobsResponse[])
+        ?.flatMap((page) => page.jobs)
+        .filter(
+          (job): job is JobListItem => job !== undefined && job !== null
+        ) ?? [],
     [data]
   );
 
