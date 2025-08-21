@@ -1,12 +1,11 @@
-import { PrismaClient } from '@prisma/client';
 import type { Prisma } from '@prisma/client';
+import { prisma } from '@acme/db';
 import { USER_ROLE, type RoleType } from '@acme/contracts';
 import { firebaseAdmin } from '@/lib/firebaseAdmin';
 import { AppError, ErrorCode } from '@/lib/errors/core';
 
 void USER_ROLE;
 
-const prisma = new PrismaClient();
 
 export async function inviteUser({
   tenantId,
