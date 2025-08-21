@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@acme/db';
 import { publishJob } from '@/lib/pubsub';
 import { authOptions } from '@/lib/auth';
 import { env } from '@/lib/env.server';
@@ -8,7 +8,12 @@ import { env } from '@/lib/env.server';
 export async function POST(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session || !session.user || !session.user.id || !session.user.tenantId) {
+    if (
+      !session ||
+      !session.user ||
+      !session.user.id ||
+      !session.user.tenantId
+    ) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
     const { id: userId, tenantId, name: userName } = session.user;
@@ -17,7 +22,10 @@ export async function POST(req: NextRequest) {
     const { imageId, watermark, options } = body;
 
     if (!imageId || !watermark) {
-      return NextResponse.json({ error: 'imageId and watermark are required' }, { status: 400 });
+      return NextResponse.json(
+        { error: 'imageId and watermark are required' },
+        { status: 400 }
+      );
     }
 
     const imagePath = `${tenantId}/${userId}/${imageId}`;

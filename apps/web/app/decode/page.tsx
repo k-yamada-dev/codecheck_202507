@@ -10,20 +10,22 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Loader2, AlertCircle } from 'lucide-react';
 import ImageUploader from '@/components/ImageUploader'; // ImageUploaderを再利用
 import { uploadFile } from '@/lib/gcs/upload.client';
-import { createJob } from '@/lib/api/jobs';
-import { Job, JobType } from '@prisma/client'; // PrismaのJob型をインポート
+import { apiClient } from '@/lib/api/client';
+import { JobResponse, JOB_TYPE } from '@acme/contracts';
 import { toast } from 'sonner';
 import { handleUIError } from '@/lib/errors/uiHandler';
 
 // 仮のジョブ型定義をPrismaのJob型に置き換え
-interface DecodeJob extends Job {
+interface DecodeJob extends JobResponse {
   inputFileName: string; // UI表示用にファイル名/URLを保持
   detectedText?: string;
   confidence: number | null;
 }
 
 // DecodeInputAreaの仮実装
-const DecodeInputArea: React.FC<{ onJobSubmit: (job: DecodeJob) => void }> = ({ onJobSubmit }) => {
+const DecodeInputArea: React.FC<{ onJobSubmit: (job: DecodeJob) => void }> = ({
+  onJobSubmit,
+}) => {
   const { t } = useTranslation();
   const [files, setFiles] = useState<File[]>([]);
   const [url, setUrl] = useState<string>('');
@@ -56,18 +58,20 @@ const DecodeInputArea: React.FC<{ onJobSubmit: (job: DecodeJob) => void }> = ({ 
         throw new Error(t('decode.errors.noFileOrUrl'));
       }
 
-      const newJob = await createJob({
-        type: JobType.DECODE,
-        srcImagePath: uploadedFileUrl,
-        params: {
-          // デコード固有のパラメータがあればここに追加
-          // 例: decodeMode: '通常',
+      const newJobResponse = await apiClient.jobs.createJob({
+        body: {
+          type: JOB_TYPE.DECODE,
+          srcImagePath: uploadedFileUrl,
+          payload: {
+            // デコード固有のパラメータがあればここに追加
+            // 例: decodeMode: '通常',
+          },
         },
       });
 
       // ジョブが作成されたことをUIに反映
       onJobSubmit({
-        ...newJob,
+        ...(newJobResponse.body as JobResponse),
         inputFileName: files.length > 0 ? files[0].name : url, // UI表示用にファイル名/URLを保持
         detectedText: undefined,
         confidence: null,
@@ -88,20 +92,24 @@ const DecodeInputArea: React.FC<{ onJobSubmit: (job: DecodeJob) => void }> = ({ 
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
-            <Label htmlFor="imageUrl">{t('decode.imageUrl', 'Image URL')}</Label>
+            <Label htmlFor="imageUrl">
+              {t('decode.imageUrl', 'Image URL')}
+            </Label>
             <Input
               id="imageUrl"
               name="imageUrl"
               type="text"
               value={url}
-              onChange={e => {
+              onChange={(e) => {
                 setUrl(e.target.value);
                 setFiles([]); // URLが入力されたらファイルをクリア
               }}
               placeholder="https://example.com/image.jpg"
             />
           </div>
-          <div className="text-center text-gray-500">{t('imageUploader.or', 'or')}</div>
+          <div className="text-center text-gray-500">
+            {t('imageUploader.or', 'or')}
+          </div>
           <div>
             <Label>{t('decode.imageUpload', 'Upload Image')}</Label>
             <ImageUploader onFilesSelected={handleFilesSelected} />
@@ -175,7 +183,7 @@ const DecodeJobTable: React.FC<{ jobs: DecodeJob[] }> = ({ jobs }) => {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {jobs.map(job => (
+              {jobs.map((job) => (
                 <tr key={job.id}>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                     {job.id}
@@ -209,8 +217,10 @@ export default function DecodePage() {
   const [jobs, setJobs] = useState<DecodeJob[]>([]);
 
   const handleJobSubmit = (newOrUpdatedJob: DecodeJob) => {
-    setJobs(prevJobs => {
-      const existingJobIndex = prevJobs.findIndex(job => job.id === newOrUpdatedJob.id);
+    setJobs((prevJobs) => {
+      const existingJobIndex = prevJobs.findIndex(
+        (job) => job.id === newOrUpdatedJob.id
+      );
       if (existingJobIndex > -1) {
         // 既存のジョブを更新
         const updatedJobs = [...prevJobs];

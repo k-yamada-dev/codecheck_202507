@@ -6,7 +6,10 @@
     "start:prod": "node dist/index.js"
   },
   "dependencies": {
-    "@google-cloud/pubsub": "^4.0.0"
+    "@google-cloud/pubsub": "^4.0.0",
+    "@acme/api-client": "workspace:*",
+    "@acme/contracts": "workspace:*",
+    "@acme/db": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",

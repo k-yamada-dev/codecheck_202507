@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 // Role
-export const RoleSchema = z.enum([
+export const RoleType = z.enum([
   'UPLOADER',
   'DOWNLOADER',
   'AUDITOR',
@@ -14,5 +14,5 @@ export const RoleSchema = z.enum([
  * import { USER_ROLE } from '@acme/contracts';
  * if (role === USER_ROLE.UPLOADER) { ... }
  */
-export const USER_ROLE = RoleSchema.enum;
-export type UserRole = z.infer<typeof RoleSchema>;
+export const USER_ROLE = RoleType.enum;
+export type RoleType = z.infer<typeof RoleType>;

@@ -1,6 +1,6 @@
 import { createNextRoute } from '@ts-rest/next';
 import { contract } from '@acme/contracts';
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@acme/db';
 import { getSessionInfo } from '@/lib/utils/apiAuth';
 import { createGipUserAndDbUser } from '@/lib/userService';
 

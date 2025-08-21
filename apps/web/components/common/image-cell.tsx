@@ -1,7 +1,7 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { fetchSignedUrl } from '@/lib/api/images';
+import { getSignedUrl } from '@/lib/gcs/getSignedUrl';
 import Image from 'next/image';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -21,13 +21,15 @@ export function ImageCell({ path, alt, thumb, onClick, className }: Props) {
     refetch,
   } = useQuery({
     queryKey: ['imageUrl', path],
-    queryFn: () => (path ? fetchSignedUrl(path) : Promise.resolve(null)),
+    queryFn: () =>
+      path ? getSignedUrl(path, { expiresInSec: 300 }) : Promise.resolve(null),
     enabled: !!path,
     staleTime: 1000 * 60 * 25,
     retry: 1,
   });
 
-  if (isLoading) return <Skeleton className={thumb ? 'h-10 w-10' : 'h-40 w-40'} />;
+  if (isLoading)
+    return <Skeleton className={thumb ? 'h-10 w-10' : 'h-40 w-40'} />;
 
   if (error || !url)
     return (
