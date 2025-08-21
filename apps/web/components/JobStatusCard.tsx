@@ -4,7 +4,7 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { JobStatus } from '@prisma/client';
+import { JobStatus, JOB_STATUS } from '@acme/contracts';
 
 interface JobStatusCardProps {
   jobId: string;
@@ -17,10 +17,10 @@ const statusMap: Record<
   JobStatus,
   { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' }
 > = {
-  [JobStatus.PENDING]: { label: 'Pending', variant: 'outline' },
-  [JobStatus.RUNNING]: { label: 'Running', variant: 'secondary' },
-  [JobStatus.DONE]: { label: 'Completed', variant: 'default' },
-  [JobStatus.ERROR]: { label: 'Failed', variant: 'destructive' },
+  [JOB_STATUS.PENDING]: { label: 'Pending', variant: 'outline' },
+  [JOB_STATUS.RUNNING]: { label: 'Running', variant: 'secondary' },
+  [JOB_STATUS.DONE]: { label: 'Completed', variant: 'default' },
+  [JOB_STATUS.ERROR]: { label: 'Failed', variant: 'destructive' },
 };
 
 const JobStatusCard: React.FC<JobStatusCardProps> = ({ jobId, status, progress, createdAt }) => {
@@ -33,7 +33,7 @@ const JobStatusCard: React.FC<JobStatusCardProps> = ({ jobId, status, progress, 
         <Badge variant={variant}>{label}</Badge>
       </CardHeader>
       <CardContent>
-        {status === JobStatus.RUNNING && progress !== undefined && (
+        {status === JOB_STATUS.RUNNING && progress !== undefined && (
           <div className="mt-2">
             <Progress value={progress} className="w-full" />
             <p className="text-xs text-muted-foreground mt-1">{progress}% complete</p>
