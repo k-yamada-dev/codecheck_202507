@@ -4,10 +4,20 @@ import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { DataTable } from '@/components/DataTable';
 import { Badge } from '@/components/ui/badge';
-import { Job, JobStatus } from '@prisma/client';
+import {
+  JobListItem as Job,
+  JOB_STATUS,
+  JobStatus,
+  JOB_TYPE,
+} from '@acme/contracts';
 import { format } from 'date-fns';
 import { ImageCell } from '@/components/common/image-cell';
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from '@/components/ui/sheet';
 
 interface JobTableProps {
   jobs: Job[];
@@ -42,13 +52,13 @@ const JobTable: React.FC<JobTableProps> = ({
 
   const getStatusVariant = (status: JobStatus) => {
     switch (status) {
-      case JobStatus.DONE:
+      case JOB_STATUS.DONE:
         return 'default';
-      case JobStatus.RUNNING:
+      case JOB_STATUS.RUNNING:
         return 'secondary';
-      case JobStatus.ERROR:
+      case JOB_STATUS.ERROR:
         return 'destructive';
-      case JobStatus.PENDING:
+      case JOB_STATUS.PENDING:
       default:
         return 'outline';
     }
@@ -62,7 +72,7 @@ const JobTable: React.FC<JobTableProps> = ({
 
   const getWatermarkText = (job: Job) => {
     if (
-      job.type === 'EMBED' &&
+      job.type === JOB_TYPE.EMBED &&
       job.params &&
       typeof job.params === 'object' &&
       job.params !== null
@@ -73,7 +83,7 @@ const JobTable: React.FC<JobTableProps> = ({
       }
     }
     if (
-      job.type === 'DECODE' &&
+      job.type === JOB_TYPE.DECODE &&
       job.result &&
       typeof job.result === 'object' &&
       job.result !== null
@@ -88,7 +98,7 @@ const JobTable: React.FC<JobTableProps> = ({
 
   const getModeStrength = (job: Job) => {
     if (
-      job.type === 'EMBED' &&
+      job.type === JOB_TYPE.EMBED &&
       job.params &&
       typeof job.params === 'object' &&
       job.params !== null
@@ -100,7 +110,7 @@ const JobTable: React.FC<JobTableProps> = ({
       }
     }
     if (
-      job.type === 'DECODE' &&
+      job.type === JOB_TYPE.DECODE &&
       job.result &&
       typeof job.result === 'object' &&
       job.result !== null
@@ -132,7 +142,7 @@ const JobTable: React.FC<JobTableProps> = ({
           { header: t('job.table.jobId', 'Job ID'), accessor: 'id' },
           {
             header: t('job.table.status', 'Status'),
-            accessor: job => (
+            accessor: (job) => (
               <Badge variant={getStatusVariant(job.status)}>
                 {t(`job.status.${job.status.toLowerCase()}`, job.status)}
               </Badge>
@@ -140,37 +150,38 @@ const JobTable: React.FC<JobTableProps> = ({
           },
           {
             header: t('job.table.startedAt', 'Started At'),
-            accessor: job => format(new Date(job.startedAt), 'yyyy-MM-dd HH:mm:ss'),
+            accessor: (job) =>
+              format(new Date(job.startedAt), 'yyyy-MM-dd HH:mm:ss'),
           },
           { header: t('job.table.user', 'User'), accessor: 'userName' },
           {
             header: t('job.table.duration', 'Duration'),
-            accessor: job => formatDuration(job.durationMs),
+            accessor: (job) => formatDuration(job.durationMs),
           },
           { header: t('job.table.type', 'Type'), accessor: 'type' },
           {
             header: t('job.table.watermarkText', 'Watermark/Detected Text'),
-            accessor: job => getWatermarkText(job),
+            accessor: (job) => getWatermarkText(job),
           },
           {
             header: t('job.table.modeStrength', 'Mode/Strength'),
-            accessor: job => getModeStrength(job),
+            accessor: (job) => getModeStrength(job),
           },
           {
             header: t('job.table.thumbnail', 'Thumbnail'),
-            accessor: job => getThumbnail(job),
+            accessor: (job) => getThumbnail(job),
           },
         ]}
-        actions={job => [
+        actions={(job) => [
           {
             label: t('job.actions.download', 'Download'),
             onClick: () => handleDownload(job, undefined),
-            disabled: job.status !== JobStatus.DONE,
+            disabled: job.status !== JOB_STATUS.DONE,
           },
           {
             label: t('job.actions.retry', 'Retry'),
             onClick: () => handleRetry(job, undefined),
-            disabled: job.status !== JobStatus.ERROR,
+            disabled: job.status !== JOB_STATUS.ERROR,
           },
           {
             label: t('job.actions.delete', 'Delete'),
@@ -181,7 +192,9 @@ const JobTable: React.FC<JobTableProps> = ({
       <Sheet open={!!selectedJob} onOpenChange={() => setSelectedJob(null)}>
         <SheetContent>
           <SheetHeader>
-            <SheetTitle>{selectedJob ? t('job.detail.title', 'Job Detail') : ''}</SheetTitle>
+            <SheetTitle>
+              {selectedJob ? t('job.detail.title', 'Job Detail') : ''}
+            </SheetTitle>
           </SheetHeader>
           {selectedJob && (
             <div className="space-y-2">
@@ -199,16 +212,19 @@ const JobTable: React.FC<JobTableProps> = ({
                 <strong>User:</strong> {selectedJob.userId}
               </div>
               <div>
-                <strong>Duration:</strong> {formatDuration(selectedJob.durationMs)}
+                <strong>Duration:</strong>{' '}
+                {formatDuration(selectedJob.durationMs)}
               </div>
               <div>
                 <strong>Type:</strong> {selectedJob.type}
               </div>
               <div>
-                <strong>Params:</strong> <pre>{JSON.stringify(selectedJob.params, null, 2)}</pre>
+                <strong>Params:</strong>{' '}
+                <pre>{JSON.stringify(selectedJob.params, null, 2)}</pre>
               </div>
               <div>
-                <strong>Result:</strong> <pre>{JSON.stringify(selectedJob.result, null, 2)}</pre>
+                <strong>Result:</strong>{' '}
+                <pre>{JSON.stringify(selectedJob.result, null, 2)}</pre>
               </div>
               <div>
                 <strong>Thumbnail:</strong> {getThumbnail(selectedJob)}

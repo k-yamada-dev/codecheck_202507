@@ -1,5 +1,5 @@
 import { NextResponse, NextRequest } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@acme/db';
 import { withErrorHandling } from '@/lib/errors/apiHandler';
 import { getSessionInfo } from '@/lib/utils/apiAuth';
 import { UserUpdateSchema } from '@acme/contracts';

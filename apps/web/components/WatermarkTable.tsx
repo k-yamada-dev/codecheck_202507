@@ -20,7 +20,8 @@ import {
 } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { TooltipProvider } from '@/components/ui/tooltip';
-import { useSignedUrl } from '@/hooks/useSignedUrl';
+import { useQuery } from '@tanstack/react-query';
+import { getSignedUrl } from '@/lib/gcs/getSignedUrl';
 
 export type EncodeMode = '通常' | 'オプション' | '更新';
 export type JpegEmbedMode = '通常' | '高速';
@@ -69,9 +70,19 @@ const ThumbnailCell: React.FC<{ image: WatermarkImage }> = ({ image }) => {
   // useSignedUrlは常に呼び出す（React Hooksルール対応）
   const {
     data: signedUrl,
-    isLoading,
     error,
-  } = useSignedUrl(image.thumbnailPath ?? '');
+    isLoading,
+  } = useQuery({
+    queryKey: ['imageUrl', image.thumbnailPath],
+    queryFn: () =>
+      image.thumbnailPath
+        ? getSignedUrl(image.thumbnailPath, { expiresInSec: 300 })
+        : Promise.resolve(null),
+    enabled: !!image.thumbnailPath,
+    staleTime: 1000 * 60 * 25,
+    retry: 1,
+  });
+
   // isUploadedがtrueならGCS、falseならローカル
   if (image.isUploaded && image.thumbnailPath) {
     return (

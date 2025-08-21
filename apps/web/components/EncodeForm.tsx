@@ -18,8 +18,8 @@ import {
 } from '@/components/ui/select';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Loader2, AlertCircle } from 'lucide-react';
-import { createJob } from '@/lib/api/jobs';
-import { JobType } from '@prisma/client';
+import { apiClient } from '@/lib/api/client';
+import { JobResponse, JOB_TYPE } from '@acme/contracts';
 
 interface EncodeFormProps {
   onSuccess?: (outputUrl: string) => void;
@@ -87,16 +87,20 @@ export const EncodeForm: React.FC<EncodeFormProps> = ({ onSuccess }) => {
         quality: formData.quality,
       };
 
-      const newJob = await createJob({
-        type: JobType.EMBED,
-        srcImagePath: filePath,
-        thumbnailPath: thumbnailPath,
-        params,
+      const newJobResponse = await apiClient.jobs.createJob({
+        body: {
+          type: JOB_TYPE.EMBED,
+          srcImagePath: filePath,
+          payload: {
+            ...params,
+            thumbnailPath: thumbnailPath,
+          },
+        },
       });
 
       // Note: In a real-world scenario, you would likely poll the job status
       // or use WebSockets to get the result. For now, we assume success.
-      onSuccess?.(newJob.id); // Passing job ID for now
+      onSuccess?.((newJobResponse.body as JobResponse).id); // Passing job ID for now
     } catch (error) {
       handleUIError(error);
     } finally {
@@ -117,7 +121,9 @@ export const EncodeForm: React.FC<EncodeFormProps> = ({ onSuccess }) => {
           </div>
 
           <div>
-            <Label htmlFor="watermark">{t('encode.watermark', 'Watermark')}</Label>
+            <Label htmlFor="watermark">
+              {t('encode.watermark', 'Watermark')}
+            </Label>
             <Input
               id="watermark"
               name="watermark"
@@ -129,7 +135,9 @@ export const EncodeForm: React.FC<EncodeFormProps> = ({ onSuccess }) => {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="strength">{t('encode.strength', 'Strength')}</Label>
+              <Label htmlFor="strength">
+                {t('encode.strength', 'Strength')}
+              </Label>
               <Input
                 id="strength"
                 name="strength"
@@ -141,7 +149,9 @@ export const EncodeForm: React.FC<EncodeFormProps> = ({ onSuccess }) => {
               />
             </div>
             <div>
-              <Label htmlFor="blockSize">{t('encode.blockSize', 'Block Size')}</Label>
+              <Label htmlFor="blockSize">
+                {t('encode.blockSize', 'Block Size')}
+              </Label>
               <Input
                 id="blockSize"
                 name="blockSize"
@@ -157,14 +167,24 @@ export const EncodeForm: React.FC<EncodeFormProps> = ({ onSuccess }) => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <Label>{t('encode.mode', 'Mode')}</Label>
-              <Select name="mode" value={formData.mode} onValueChange={handleSelectChange('mode')}>
+              <Select
+                name="mode"
+                value={formData.mode}
+                onValueChange={handleSelectChange('mode')}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Select a mode" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="normal">{t('encode.modes.normal', 'Normal')}</SelectItem>
-                  <SelectItem value="fast">{t('encode.modes.fast', 'Fast')}</SelectItem>
-                  <SelectItem value="quality">{t('encode.modes.quality', 'Quality')}</SelectItem>
+                  <SelectItem value="normal">
+                    {t('encode.modes.normal', 'Normal')}
+                  </SelectItem>
+                  <SelectItem value="fast">
+                    {t('encode.modes.fast', 'Fast')}
+                  </SelectItem>
+                  <SelectItem value="quality">
+                    {t('encode.modes.quality', 'Quality')}
+                  </SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -214,7 +234,9 @@ export const EncodeForm: React.FC<EncodeFormProps> = ({ onSuccess }) => {
           <Button
             type="submit"
             className="w-full"
-            disabled={loading || formData.files.length === 0 || !formData.watermark}
+            disabled={
+              loading || formData.files.length === 0 || !formData.watermark
+            }
           >
             {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             {t('encode.submit', 'Encode')}

@@ -1,7 +1,6 @@
 import { PubSub, Message } from '@google-cloud/pubsub';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { JOB_STATUS } from '@acme/contracts';
+import { prisma } from '@acme/db';
 
 const subName = 'jobs-sub';
 const concurrency = process.env.WORKER_CONCURRENCY
@@ -31,7 +30,7 @@ async function handleMessage(message: Message) {
   try {
     await prisma.job.update({
       where: { id: jobId },
-      data: { status: 'RUNNING', startedAt },
+      data: { status: JOB_STATUS.RUNNING, startedAt },
     });
 
     // --- ここで実際の透かし埋め込み処理を実行 ---
@@ -47,7 +46,7 @@ async function handleMessage(message: Message) {
     await prisma.job.update({
       where: { id: jobId },
       data: {
-        status: 'DONE',
+        status: JOB_STATUS.DONE,
         result,
         finishedAt,
         durationMs,
@@ -61,7 +60,7 @@ async function handleMessage(message: Message) {
     await prisma.job.update({
       where: { id: jobId },
       data: {
-        status: 'ERROR',
+        status: JOB_STATUS.ERROR,
         errorCode: 'WORKER_ERROR',
         errorMessage: error.message || String(error),
         finishedAt: new Date(),

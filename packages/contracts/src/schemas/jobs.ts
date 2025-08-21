@@ -30,6 +30,11 @@ export const JobListItemSchema = JobResponseSchema.extend({
   srcImagePath: z.string().nullable(),
   thumbnailPath: z.string().nullable(),
   params: z.record(z.unknown()).nullable(),
+  result: z.record(z.unknown()).nullable(),
+  startedAt: z.string(), // ISO string
+  durationMs: z.number().int().nullable(),
+  userName: z.string(),
+  userId: z.string().uuid(),
 });
 
 export const GetJobsQuerySchema = z.object({
