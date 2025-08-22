@@ -23,8 +23,12 @@ export async function publishJob(message: { jobId: string; tenantId: string }) {
   try {
     const messageId = await topic.publishMessage({ json: message });
     console.log(`Message ${messageId} published.`);
-  } catch (error: any) {
-    console.error(`Received error while publishing: ${error.message}`);
+  } catch (error: unknown) {
+    if (error instanceof Error) {
+      console.error(`Received error while publishing: ${error.message}`);
+    } else {
+      console.error('Received error while publishing.');
+    }
     throw error;
   }
 }
