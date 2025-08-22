@@ -1,9 +1,15 @@
 import { createRouteHandler } from '@/lib/ts-rest/next-handler';
-import { contract, USER_ROLE } from '@acme/contracts';
+import {
+  contract,
+  USER_ROLE,
+  CreateTenantRequestSchema,
+  type CreateTenantRequest,
+} from '@acme/contracts';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@acme/db';
 import { firebaseAdmin } from '@/lib/firebaseAdmin';
+import type { Prisma, Tenant } from '@prisma/client';
 
 const router = createRouteHandler(contract.admin, {
   getTenants: async () => {
@@ -30,7 +36,7 @@ const router = createRouteHandler(contract.admin, {
       });
 
       // createdAt/updatedAt/deletedAtをstring(ISO)化
-      const tenants = tenantsRaw.map((t: any) => ({
+      const tenants = tenantsRaw.map((t: Tenant) => ({
         id: t.id,
         name: t.name,
         tenantCode: t.tenantCode,
@@ -58,7 +64,7 @@ const router = createRouteHandler(contract.admin, {
       };
     }
   },
-  createTenant: async ({ body }: { body: any }) => {
+  createTenant: async ({ body }: { body: CreateTenantRequest }) => {
     try {
       const session = await getServerSession(authOptions);
 
@@ -77,7 +83,8 @@ const router = createRouteHandler(contract.admin, {
         };
       }
 
-      const { name, adminEmail, tenantCode } = body;
+      const { name, adminEmail, tenantCode } =
+        CreateTenantRequestSchema.parse(body);
 
       // Generate tenantCode if not provided
       const finalTenantCode =
@@ -85,7 +92,8 @@ const router = createRouteHandler(contract.admin, {
         name.toLowerCase().replace(/\s/g, '').slice(0, 8) + Math.random().toString(36).slice(2, 6);
 
       // Prisma transaction to create tenant and admin user together
-      const newTenant = await prisma.$transaction(async (tx: any) => {
+      const newTenant = await prisma.$transaction(
+        async (tx: Prisma.TransactionClient) => {
         const tenant = await tx.tenant.create({
           data: {
             name,
