@@ -12,19 +12,20 @@ import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { handleUIError } from '@/lib/errors/uiHandler';
 import { uploadFile } from '@/lib/gcs/upload.client';
-import {
-  useInfiniteQuery,
-  useQueryClient,
-  useMutation,
-} from '@tanstack/react-query';
-import { apiClient } from '@/lib/api/client';
-import type {
-  JobListItem,
-  GetJobsResponse,
-  CreateJobRequest,
-} from '@acme/contracts';
-import { JOB_TYPE } from '@acme/contracts';
-import { useSession } from 'next-auth/react';
+  import {
+    useInfiniteQuery,
+    useQueryClient,
+    useMutation,
+  } from '@tanstack/react-query';
+  import { apiClient } from '@/lib/api/client';
+  import type {
+    JobListItem,
+    GetJobsResponse,
+    CreateJobRequest,
+    JobResponse,
+  } from '@acme/contracts';
+  import { JOB_TYPE } from '@acme/contracts';
+  import { useSession } from 'next-auth/react';
 
 const defaultWatermarkSettings: WatermarkSettings = {
   text: 'ACUA-2025',
@@ -43,7 +44,7 @@ const WatermarkPage: React.FC = () => {
     new Set()
   );
 
-  const createJobMutation = useMutation({
+  const createJobMutation = useMutation<JobResponse, Error, CreateJobRequest>({
     mutationFn: async (data: CreateJobRequest) => {
       const response = await apiClient.jobs.createJob({
         body: data,
@@ -249,7 +250,7 @@ const WatermarkPage: React.FC = () => {
             payload: jobParams,
           },
           {
-            onSuccess: (newJob: any) => {
+            onSuccess: (newJob: JobResponse) => {
               setImages((prevImages) =>
                 prevImages.map((img) =>
                   img.id === image.id
@@ -262,8 +263,10 @@ const WatermarkPage: React.FC = () => {
               );
               queryClient.invalidateQueries({ queryKey: ['jobs', 'all'] });
             },
-            onError: (error: any) => {
-              handleUIError(error);
+            onError: (error: unknown) => {
+              const err =
+                error instanceof Error ? error : new Error(String(error));
+              handleUIError(err);
               setImages((prevImages) =>
                 prevImages.map((img) =>
                   img.id === image.id ? { ...img, status: 'error' } : img
@@ -322,8 +325,10 @@ const WatermarkPage: React.FC = () => {
               toast.success('ジョブをリトライしました。');
               queryClient.invalidateQueries({ queryKey: ['jobs', 'all'] });
             },
-            onError: (error: any) => {
-              handleUIError(error);
+            onError: (error: unknown) => {
+              const err =
+                error instanceof Error ? error : new Error(String(error));
+              handleUIError(err);
             },
           }
         );
