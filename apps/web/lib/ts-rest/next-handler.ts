@@ -2,21 +2,37 @@ import { initServer } from '@ts-rest/express';
 import type { AppRoute, AppRouter } from '@ts-rest/core';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
+import type {
+  AppRouteImplementation,
+  AppRouteImplementationOrOptions,
+  RouterImplementation,
+} from '@ts-rest/express/src/lib/types';
 
 const server = initServer();
 
-// Create Next.js route handlers from a ts-rest contract and implementation.
-export function createRouteHandler<T extends AppRouter | AppRoute>(
-  contract: T,
-  implementation: T extends AppRouter ? any : any,
-) {
-  const isRoute = typeof implementation === 'function';
-  const serverImpl = isRoute
-    ? server.route(contract as AppRoute, implementation as any)
-    : server.router(contract as AppRouter, implementation as any);
+type NextHandler = (
+  req: NextRequest,
+  context: { params: Record<string, string> },
+) => Promise<NextResponse>;
 
-  const makeHandler = (fn: any) =>
-    async (req: NextRequest, context: { params: any }) => {
+export function createRouteHandler<T extends AppRoute>(
+  contract: T,
+  implementation: AppRouteImplementationOrOptions<T>,
+): NextHandler;
+export function createRouteHandler<T extends AppRouter>(
+  contract: T,
+  implementation: RouterImplementation<T>,
+): { [K in keyof RouterImplementation<T>]: NextHandler };
+export function createRouteHandler(
+  contract: AppRouter | AppRoute,
+  implementation:
+    | RouterImplementation<AppRouter>
+    | AppRouteImplementationOrOptions<AppRoute>,
+) {
+  const makeHandler = <TArgs, TResult extends { status: number; body?: unknown; headers?: Record<string, string> }>(
+    fn: (args: TArgs) => Promise<TResult>,
+  ): NextHandler =>
+    async (req, context) => {
       let body: unknown;
       if (req.method !== 'GET' && req.method !== 'HEAD') {
         try {
@@ -31,22 +47,32 @@ export function createRouteHandler<T extends AppRouter | AppRoute>(
         params: context.params,
         headers: Object.fromEntries(req.headers.entries()),
         req,
-      });
+      } as TArgs);
       return NextResponse.json(result.body, {
         status: result.status,
         headers: result.headers as Record<string, string> | undefined,
       });
     };
 
-  if (isRoute) {
-    return makeHandler(serverImpl);
+  if (typeof implementation === 'function') {
+    const routeImpl = server.route(
+      contract as AppRoute,
+      implementation as AppRouteImplementation<AppRoute>,
+    );
+    return makeHandler(routeImpl);
   }
 
-  const handlers: Record<string, any> = {};
-  for (const key of Object.keys(serverImpl)) {
-    handlers[key] = makeHandler((serverImpl as any)[key]);
+  const routerImpl = server.router(
+    contract as AppRouter,
+    implementation as RouterImplementation<AppRouter>,
+  );
+
+  const handlers: Partial<Record<keyof typeof routerImpl, NextHandler>> = {};
+  for (const key of Object.keys(routerImpl) as Array<keyof typeof routerImpl>) {
+    const route = routerImpl[key] as AppRouteImplementation<AppRoute>;
+    handlers[key] = makeHandler(route);
   }
-  return handlers as any;
+  return handlers as { [K in keyof typeof routerImpl]: NextHandler };
 }
 
 export default createRouteHandler;
