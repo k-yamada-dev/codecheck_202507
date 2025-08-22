@@ -19,8 +19,12 @@ async function handleMessage(message: Message) {
     if (!jobId) {
       throw new Error('jobId not found in message');
     }
-  } catch (error: any) {
-    console.error(`Error parsing message data: ${error.message}`);
+  } catch (error: unknown) {
+    if (error instanceof Error) {
+      console.error(`Error parsing message data: ${error.message}`);
+    } else {
+      console.error(`Error parsing message data: ${String(error)}`);
+    }
     // メッセージ形式が不正な場合はackして再処理させない
     message.ack();
     return;
@@ -55,14 +59,15 @@ async function handleMessage(message: Message) {
 
     console.log(`Job ${jobId} completed successfully.`);
     message.ack();
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error(`Error processing job ${jobId}:`, error);
+    const errorMessage = error instanceof Error ? error.message : String(error);
     await prisma.job.update({
       where: { id: jobId },
       data: {
         status: JOB_STATUS.ERROR,
         errorCode: 'WORKER_ERROR',
-        errorMessage: error.message || String(error),
+        errorMessage,
         finishedAt: new Date(),
       },
     });
