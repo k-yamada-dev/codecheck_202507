@@ -1,11 +1,12 @@
 import { createRouteHandler } from '@/lib/ts-rest/next-handler';
 import { contract, JOB_TYPE, JOB_STATUS } from '@acme/contracts';
+import type { DecodeRequest } from '@acme/contracts';
 import { jobsRepo } from '@acme/db';
 import { getSessionInfo } from '@/lib/utils/apiAuth';
 import { execSync } from 'child_process';
 import { downloadFile } from '@/lib/gcs/storage.server';
 
-export const POST = createRouteHandler(contract.decode, async ({ body }: { body: any }) => {
+export const POST = createRouteHandler(contract.decode, async ({ body }: { body: DecodeRequest }) => {
   try {
     // Get session information
     const { tenantId, userId, userName } = await getSessionInfo();
