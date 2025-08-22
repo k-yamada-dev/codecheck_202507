@@ -1,11 +1,33 @@
 import { createRouteHandler } from '@/lib/ts-rest/next-handler';
-import { contract, JOB_TYPE } from '@acme/contracts';
-import { jobsRepo } from '@acme/db';
+import {
+  contract,
+  JOB_TYPE,
+  type GetImagesQuery,
+  type UploadImageRequest,
+  type ImageItem,
+} from '@acme/contracts';
+import {
+  jobsRepo,
+  type JobListItemFromRepo,
+  type FindJobsQuery,
+} from '@acme/db';
 import { getSessionInfo } from '@/lib/utils/apiAuth';
 import { getSignedUrl } from '@/lib/gcs/storage.server';
 
+interface ImageQueryOptions extends FindJobsQuery {
+  type: JOB_TYPE;
+  isArchived: boolean;
+  page?: number;
+  sortBy?: GetImagesQuery['sortBy'];
+  sortOrder?: GetImagesQuery['sortOrder'];
+}
+
+interface ArchiveImageParams {
+  id: string;
+}
+
 const router = createRouteHandler(contract.images, {
-  getImages: async ({ query }: { query: any }) => {
+  getImages: async ({ query }: { query: GetImagesQuery }) => {
     try {
       // Get session information
       const { tenantId } = await getSessionInfo();
@@ -13,10 +35,14 @@ const router = createRouteHandler(contract.images, {
       const { page, limit, sortBy, sortOrder, search, userId, startDate, endDate } = query;
 
       // Build filter conditions
-      const filters: any = {
+      const filters: ImageQueryOptions = {
         tenantId,
         type: JOB_TYPE.EMBED,
         isArchived: false,
+        page,
+        limit,
+        sortBy,
+        sortOrder,
       };
 
       // Add additional filters
@@ -28,19 +54,17 @@ const router = createRouteHandler(contract.images, {
         filters.userId = userId;
       }
 
-      if (startDate || endDate) {
-        filters.dateRange = { startDate, endDate };
+      if (startDate) {
+        filters.startDate = startDate;
       }
 
-      const result = await jobsRepo.findMany({
-        ...filters,
-        page,
-        limit,
-        sortBy,
-        sortOrder,
-      });
+      if (endDate) {
+        filters.endDate = endDate;
+      }
 
-      const images = result.jobs.map((job: any) => ({
+      const result = await jobsRepo.findMany(filters);
+
+      const images: ImageItem[] = result.jobs.map((job: JobListItemFromRepo) => ({
         id: job.id,
         srcImagePath: job.srcImagePath,
         thumbnailPath: job.thumbnailPath,
@@ -77,7 +101,7 @@ const router = createRouteHandler(contract.images, {
       };
     }
   },
-  uploadImage: async ({ body }: { body: any }) => {
+  uploadImage: async ({ body }: { body: UploadImageRequest }) => {
     try {
       // Generate signed URL for upload
       const uploadUrl = await getSignedUrl(`${body.folder}/${body.fileName}`, 3600);
@@ -105,7 +129,7 @@ const router = createRouteHandler(contract.images, {
       };
     }
   },
-  archiveImage: async ({ params }: { params: any }) => {
+  archiveImage: async ({ params }: { params: ArchiveImageParams }) => {
     try {
       const { tenantId } = await getSessionInfo();
 
@@ -137,7 +161,7 @@ const router = createRouteHandler(contract.images, {
           thumbnailPath: job.thumbnailPath,
           userName: job.userName,
           createdAt: job.createdAt.toISOString(),
-          params: job.params as Record<string, any> | null,
+          params: job.params as Record<string, unknown> | null,
         },
       };
     } catch (error) {
