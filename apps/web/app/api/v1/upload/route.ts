@@ -8,6 +8,7 @@ import { getDestinationPath } from '@/lib/utils/path';
 import { createThumbnail } from '@/lib/utils/imageProcessing';
 import { withErrorHandling } from '@/lib/errors/apiHandler';
 import { AppError, ErrorCode } from '@/lib/errors/core';
+import { env } from '@/lib/env.server';
 
 const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20MB
 const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
@@ -58,11 +59,26 @@ export const POST = withErrorHandling(async (request: NextRequest) => {
 
   const jobId = uuidv4();
 
-  const tempThumbnailPath = path.join(TMP_DIR, `thumb-${path.basename(tempFilePath)}.jpg`);
+  const tempThumbnailPath = path.join(
+    TMP_DIR,
+    `thumb-${path.basename(tempFilePath)}.jpg`
+  );
   await createThumbnail(tempFilePath, tempThumbnailPath);
 
-  const originalDestPath = getDestinationPath(tenantId, userId, jobId, 'original', file.name);
-  const thumbnailDestPath = getDestinationPath(tenantId, userId, jobId, 'thumbnail', file.name);
+  const originalDestPath = getDestinationPath(
+    tenantId,
+    userId,
+    jobId,
+    'original',
+    file.name
+  );
+  const thumbnailDestPath = getDestinationPath(
+    tenantId,
+    userId,
+    jobId,
+    'thumbnail',
+    file.name
+  );
 
   const [originalFilePath, thumbnailPath] = await Promise.all([
     uploadFile(tempFilePath, originalDestPath),
@@ -72,9 +88,17 @@ export const POST = withErrorHandling(async (request: NextRequest) => {
   await fs.unlink(tempFilePath);
   await fs.unlink(tempThumbnailPath);
 
+  // IMAGE_BASE_URL が設定されていればそれを使い、なければ storage.googleapis.com を組み立てる
+  const baseUrl =
+    env.IMAGE_BASE_URL ??
+    `https://storage.googleapis.com/${env.GCS_BUCKET_NAME}`;
+
+  const fileUrl = `${baseUrl}/${originalFilePath}`;
+  const thumbnailUrl = thumbnailPath ? `${baseUrl}/${thumbnailPath}` : null;
+
   return NextResponse.json({
     jobId,
-    filePath: originalFilePath,
-    thumbnailPath: thumbnailPath,
+    filePath: fileUrl,
+    thumbnailPath: thumbnailUrl,
   });
 });

@@ -1,15 +1,18 @@
-import { Prisma, Job, JobType } from '@prisma/client';
+import { Prisma, Job, JobType, JobStatus } from '@prisma/client';
 import { prisma } from '../client';
+
+export type { JsonObject } from '@prisma/client/runtime/library';
 
 // Type for the data required to create a job
 export type CreateJobData = {
   tenantId: string;
   userId: string;
   userName: string;
-  type: 'EMBED' | 'DECODE';
-  payload: Prisma.JsonObject;
+  type: JobType;
   srcImagePath: string;
   imageUrl: string;
+  // Optional thumbnail path (nullable when not available)
+  thumbnailPath?: string | null;
   params: Prisma.JsonObject;
   ip?: string | null;
   ua?: string | null;
@@ -17,10 +20,15 @@ export type CreateJobData = {
 
 // Type for updating a job's status and result
 export type UpdateJobResultData = {
-  status: 'RUNNING' | 'DONE' | 'ERROR';
+  status: JobStatus;
+  // When the job starts (optional)
+  startedAt?: Date;
   finishedAt?: Date;
   durationMs?: number;
   result?: Prisma.JsonObject;
+  // Optional error details for failure cases
+  errorCode?: string | null;
+  errorMessage?: string | null;
 };
 
 // Type for findMany query options
@@ -62,7 +70,7 @@ export const jobsRepo = {
     return prisma.job.create({
       data: {
         ...data,
-        status: 'PENDING',
+        status: JobStatus.PENDING,
         result: {},
       },
       select: {

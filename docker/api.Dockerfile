@@ -1,7 +1,7 @@
 FROM node:18-slim
 
 # Install dependencies
-RUN apt-get update && apt-get install -y openssl
+RUN apt-get update && apt-get install -y openssl netcat && rm -rf /var/lib/apt/lists/*
 
 # Set working directory
 WORKDIR /work

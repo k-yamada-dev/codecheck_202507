@@ -3,7 +3,7 @@
 import React, { useState, useMemo } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import { format } from 'date-fns';
+import { formatDate } from '@/lib/dateUtils';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -168,7 +168,7 @@ export default function UserManagementPage() {
       {
         header: '最終更新',
         accessor: (row: UserResponse) =>
-          format(new Date(row.updatedAt), 'yyyy-MM-dd HH:mm'),
+          formatDate(row.updatedAt, 'yyyy-MM-dd HH:mm'),
       },
     ],
     []

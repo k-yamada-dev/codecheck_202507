@@ -10,7 +10,9 @@ import { JobTypeSchema, JobStatusSchema } from '../enums/job';
 export const CreateJobRequestSchema = z.object({
   type: JobTypeSchema,
   srcImagePath: z.string({ required_error: 'Source image path is required.' }).min(1),
-  payload: z.record(z.unknown()).default({}),
+  params: z.record(z.unknown()).default({}),
+  // Optional thumbnail path (may be null when not available)
+  thumbnailPath: z.string().nullable().optional(),
 });
 
 /**
@@ -115,4 +117,5 @@ export type JobResponse = z.infer<typeof JobResponseSchema>;
 export type JobListItem = z.infer<typeof JobListItemSchema>;
 export type GetJobsQuery = z.infer<typeof GetJobsQuerySchema>;
 export type GetJobsResponse = z.infer<typeof GetJobsResponseSchema>;
+export type DeleteJobParams = z.infer<typeof JobsApiMeta.deleteJob.pathParams>;
 export type DeleteJobResponse = z.infer<typeof DeleteJobResponseSchema>;

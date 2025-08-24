@@ -12,20 +12,20 @@ import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { handleUIError } from '@/lib/errors/uiHandler';
 import { uploadFile } from '@/lib/gcs/upload.client';
-  import {
-    useInfiniteQuery,
-    useQueryClient,
-    useMutation,
-  } from '@tanstack/react-query';
-  import { apiClient } from '@/lib/api/client';
-  import type {
-    JobListItem,
-    GetJobsResponse,
-    CreateJobRequest,
-    JobResponse,
-  } from '@acme/contracts';
-  import { JOB_TYPE } from '@acme/contracts';
-  import { useSession } from 'next-auth/react';
+import {
+  useInfiniteQuery,
+  useQueryClient,
+  useMutation,
+} from '@tanstack/react-query';
+import { apiClient } from '@/lib/api/client';
+import type {
+  JobListItem,
+  GetJobsResponse,
+  CreateJobRequest,
+  JobResponse,
+} from '@acme/contracts';
+import { JOB_TYPE, JOB_STATUS } from '@acme/contracts';
+import { useSession } from 'next-auth/react';
 
 const defaultWatermarkSettings: WatermarkSettings = {
   text: 'ACUA-2025',
@@ -49,7 +49,7 @@ const WatermarkPage: React.FC = () => {
       const response = await apiClient.jobs.createJob({
         body: data,
       });
-      return response.body;
+      return response.body as JobResponse;
     },
   });
 
@@ -104,11 +104,11 @@ const WatermarkPage: React.FC = () => {
                   ?.jpegQuality as number) || 90,
             } as WatermarkSettings,
             status:
-              job.status === 'DONE'
+              job.status === JOB_STATUS.DONE
                 ? 'success'
-                : job.status === 'ERROR'
+                : job.status === JOB_STATUS.ERROR
                   ? 'error'
-                  : job.status === 'RUNNING'
+                  : job.status === JOB_STATUS.RUNNING
                     ? 'running'
                     : 'pending',
             jobId: job.id,
@@ -247,7 +247,9 @@ const WatermarkPage: React.FC = () => {
           {
             type: JOB_TYPE.EMBED,
             srcImagePath: uploadedFileUrl,
-            payload: jobParams,
+            // pass thumbnail URL (may be null)
+            thumbnailPath: thumbnailPath ?? null,
+            params: jobParams,
           },
           {
             onSuccess: (newJob: JobResponse) => {
@@ -318,7 +320,7 @@ const WatermarkPage: React.FC = () => {
           {
             type: JOB_TYPE.EMBED,
             srcImagePath: image.uploadedFileUrl || '',
-            payload: jobParams,
+            params: jobParams,
           },
           {
             onSuccess: () => {

@@ -17,8 +17,13 @@ import {
   JOB_TYPE,
   JOB_STATUS,
 } from '@acme/contracts';
-import { format } from 'date-fns';
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import { formatDate } from '@/lib/dateUtils';
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from '@/components/ui/sheet';
 import { ImageCell } from '@/components/common/image-cell';
 
 interface LogTableProps {
@@ -124,8 +129,12 @@ const LogTable: React.FC<LogTableProps> = ({ jobs = [] }) => {
             <TableHead>{t('log.table.user', 'User')}</TableHead>
             <TableHead>{t('log.table.duration', 'Duration')}</TableHead>
             <TableHead>{t('log.table.type', 'Type')}</TableHead>
-            <TableHead>{t('log.table.watermarkText', 'Watermark/Detected Text')}</TableHead>
-            <TableHead>{t('log.table.modeStrength', 'Mode/Strength')}</TableHead>
+            <TableHead>
+              {t('log.table.watermarkText', 'Watermark/Detected Text')}
+            </TableHead>
+            <TableHead>
+              {t('log.table.modeStrength', 'Mode/Strength')}
+            </TableHead>
             <TableHead>{t('log.table.thumbnail', 'Thumbnail')}</TableHead>
           </TableRow>
         </TableHeader>
@@ -137,19 +146,27 @@ const LogTable: React.FC<LogTableProps> = ({ jobs = [] }) => {
               </TableCell>
             </TableRow>
           ) : (
-            jobs.map(job => (
-              <TableRow key={job.id} onClick={() => setSelectedJob(job)} className="cursor-pointer">
+            jobs.map((job) => (
+              <TableRow
+                key={job.id}
+                onClick={() => setSelectedJob(job)}
+                className="cursor-pointer"
+              >
                 <TableCell className="font-medium">{job.id}</TableCell>
                 <TableCell>
                   <Badge variant={getStatusVariant(job.status)}>
                     {t(`job.status.${job.status.toLowerCase()}`, job.status)}
                   </Badge>
                 </TableCell>
-                <TableCell>{format(new Date(job.startedAt), 'yyyy-MM-dd HH:mm:ss')}</TableCell>
+                <TableCell>{formatDate(job.startedAt)}</TableCell>
                 <TableCell>{job.userName ?? job.userId}</TableCell>
                 <TableCell>{formatDuration(job.durationMs)}</TableCell>
-                <TableCell>{t(`job.type.${job.type.toLowerCase()}`, job.type)}</TableCell>
-                <TableCell title={getWatermarkText(job)}>{getWatermarkText(job)}</TableCell>
+                <TableCell>
+                  {t(`job.type.${job.type.toLowerCase()}`, job.type)}
+                </TableCell>
+                <TableCell title={getWatermarkText(job)}>
+                  {getWatermarkText(job)}
+                </TableCell>
                 <TableCell>{getModeStrength(job)}</TableCell>
                 <TableCell>{getThumbnail(job)}</TableCell>
               </TableRow>
@@ -160,7 +177,9 @@ const LogTable: React.FC<LogTableProps> = ({ jobs = [] }) => {
       <Sheet open={!!selectedJob} onOpenChange={() => setSelectedJob(null)}>
         <SheetContent>
           <SheetHeader>
-            <SheetTitle>{selectedJob ? t('log.detail.title', 'Job Detail') : ''}</SheetTitle>
+            <SheetTitle>
+              {selectedJob ? t('log.detail.title', 'Job Detail') : ''}
+            </SheetTitle>
           </SheetHeader>
           {selectedJob && (
             <div className="space-y-2">
@@ -171,23 +190,25 @@ const LogTable: React.FC<LogTableProps> = ({ jobs = [] }) => {
                 <strong>Status:</strong> {selectedJob.status}
               </div>
               <div>
-                <strong>Started At:</strong>{' '}
-                {format(new Date(selectedJob.startedAt), 'yyyy-MM-dd HH:mm:ss')}
+                <strong>Started At:</strong> {formatDate(selectedJob.startedAt)}
               </div>
               <div>
                 <strong>User:</strong> {selectedJob.userId}
               </div>
               <div>
-                <strong>Duration:</strong> {formatDuration(selectedJob.durationMs)}
+                <strong>Duration:</strong>{' '}
+                {formatDuration(selectedJob.durationMs)}
               </div>
               <div>
                 <strong>Type:</strong> {selectedJob.type}
               </div>
               <div>
-                <strong>Params:</strong> <pre>{JSON.stringify(selectedJob.params, null, 2)}</pre>
+                <strong>Params:</strong>{' '}
+                <pre>{JSON.stringify(selectedJob.params, null, 2)}</pre>
               </div>
               <div>
-                <strong>Result:</strong> <pre>{JSON.stringify(selectedJob.result, null, 2)}</pre>
+                <strong>Result:</strong>{' '}
+                <pre>{JSON.stringify(selectedJob.result, null, 2)}</pre>
               </div>
               <div>
                 <strong>Thumbnail:</strong> {getThumbnail(selectedJob)}

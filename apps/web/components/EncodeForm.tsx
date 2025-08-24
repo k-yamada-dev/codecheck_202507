@@ -91,9 +91,10 @@ export const EncodeForm: React.FC<EncodeFormProps> = ({ onSuccess }) => {
         body: {
           type: JOB_TYPE.EMBED,
           srcImagePath: filePath,
-          payload: {
+          // pass thumbnailPath as top-level optional field (nullable when not present)
+          thumbnailPath: thumbnailPath ?? null,
+          params: {
             ...params,
-            thumbnailPath: thumbnailPath,
           },
         },
       });

@@ -62,7 +62,7 @@ const DecodeInputArea: React.FC<{ onJobSubmit: (job: DecodeJob) => void }> = ({
         body: {
           type: JOB_TYPE.DECODE,
           srcImagePath: uploadedFileUrl,
-          payload: {
+          params: {
             // デコード固有のパラメータがあればここに追加
             // 例: decodeMode: '通常',
           },

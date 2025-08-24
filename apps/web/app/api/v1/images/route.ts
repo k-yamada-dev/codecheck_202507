@@ -2,6 +2,7 @@ import { createRouteHandler } from '@/lib/ts-rest/next-handler';
 import {
   contract,
   JOB_TYPE,
+  type JobType,
   type GetImagesQuery,
   type UploadImageRequest,
   type ImageItem,
@@ -13,9 +14,10 @@ import {
 } from '@acme/db';
 import { getSessionInfo } from '@/lib/utils/apiAuth';
 import { getSignedUrl } from '@/lib/gcs/storage.server';
+import { env } from '@/lib/env.server';
 
 interface ImageQueryOptions extends FindJobsQuery {
-  type: JOB_TYPE;
+  type: JobType;
   isArchived: boolean;
   page?: number;
   sortBy?: GetImagesQuery['sortBy'];
@@ -32,7 +34,16 @@ const router = createRouteHandler(contract.images, {
       // Get session information
       const { tenantId } = await getSessionInfo();
 
-      const { page, limit, sortBy, sortOrder, search, userId, startDate, endDate } = query;
+      const {
+        page,
+        limit,
+        sortBy,
+        sortOrder,
+        search,
+        userId,
+        startDate,
+        endDate,
+      } = query;
 
       // Build filter conditions
       const filters: ImageQueryOptions = {
@@ -64,14 +75,28 @@ const router = createRouteHandler(contract.images, {
 
       const result = await jobsRepo.findMany(filters);
 
-      const images: ImageItem[] = result.jobs.map((job: JobListItemFromRepo) => ({
-        id: job.id,
-        srcImagePath: job.srcImagePath,
-        thumbnailPath: job.thumbnailPath,
-        userName: job.userName,
-        createdAt: job.createdAt.toISOString(),
-        params: job.params,
-      }));
+      const baseUrl =
+        env.IMAGE_BASE_URL ??
+        `https://storage.googleapis.com/${env.GCS_BUCKET_NAME}`;
+
+      const images: ImageItem[] = result.jobs.map(
+        (job: JobListItemFromRepo) => ({
+          id: job.id,
+          srcImagePath: job.srcImagePath
+            ? job.srcImagePath.startsWith('http')
+              ? job.srcImagePath
+              : `${baseUrl}/${job.srcImagePath}`
+            : '',
+          thumbnailPath: job.thumbnailPath
+            ? job.thumbnailPath.startsWith('http')
+              ? job.thumbnailPath
+              : `${baseUrl}/${job.thumbnailPath}`
+            : null,
+          userName: job.userName,
+          createdAt: job.createdAt.toISOString(),
+          params: job.params as Record<string, unknown> | null,
+        })
+      );
 
       return {
         status: 200,
@@ -104,7 +129,10 @@ const router = createRouteHandler(contract.images, {
   uploadImage: async ({ body }: { body: UploadImageRequest }) => {
     try {
       // Generate signed URL for upload
-      const uploadUrl = await getSignedUrl(`${body.folder}/${body.fileName}`, 3600);
+      const uploadUrl = await getSignedUrl(
+        `${body.folder}/${body.fileName}`,
+        3600
+      );
       const downloadUrl = `https://storage.googleapis.com/${process.env.GCS_BUCKET_NAME}/${body.folder}/${body.fileName}`;
       const filePath = `${body.folder}/${body.fileName}`;
 

@@ -37,8 +37,9 @@ services:
       GCS_BUCKET: local-bucket
     volumes:
       - .:/work
+      - node_modules_api:/work/node_modules
     working_dir: /work
-    command: sh -c "pnpm i && pnpm prisma migrate deploy && pnpm dev --port 3000 --hostname 0.0.0.0"
+    command: sh -c "until nc -z db 5432; do echo 'waiting for db'; sleep 1; done; pnpm i && pnpm prisma migrate deploy && pnpm dev --port 3000 --hostname 0.0.0.0"
     ports: ['3000:3000']
     depends_on: [db, pubsub]
 
@@ -48,6 +49,7 @@ services:
       dockerfile: docker/worker.Dockerfile
     volumes:
       - .:/work
+      - node_modules_worker:/work/node_modules
     working_dir: /work
     environment:
       NODE_ENV: development
@@ -63,3 +65,5 @@ services:
 
 volumes:
   db_data:
+  node_modules_api:
+  node_modules_worker:

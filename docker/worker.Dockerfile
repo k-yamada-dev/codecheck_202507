@@ -12,19 +12,25 @@ RUN npm install -g pnpm
 COPY pnpm-workspace.yaml ./
 COPY package.json ./
 COPY pnpm-lock.yaml ./
-COPY worker/package.json ./worker/
+COPY apps/worker/package.json ./worker/
 COPY patches ./patches
 # postinstallでprisma generateが実行されるため、スキーマファイルを先にコピー
-COPY prisma ./prisma
+COPY packages/db/prisma ./packages/db/prisma
+# packages/db の package.json を先にコピーしてワークスペース認識させる
+COPY packages/db/package.json ./packages/db/package.json
 
 # 依存関係をインストール (ここでpostinstallが実行される)
 RUN pnpm install --frozen-lockfile
+
+# Prisma クライアントをワークスペースの DB パッケージで生成（型を確実に作る）
+# workspace のパッケージコンテキストで prisma を実行（パッケージ内の prisma/schema.prisma を使う）
+RUN pnpm -w --filter @acme/db exec prisma generate
 
 # アプリケーションの残りのファイルをコピー
 COPY . .
 
 # workerディレクトリに移動してビルドを実行
-WORKDIR /work/worker
+WORKDIR /work/apps/worker
 RUN pnpm build
 
 # ビルドされたJSを実行

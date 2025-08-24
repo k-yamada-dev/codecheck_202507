@@ -11,7 +11,7 @@ import { useInfiniteQuery } from '@tanstack/react-query';
 import { apiClient } from '@/lib/api/client';
 import LogTable from '@/components/LogTable'; // Assuming LogTable will be adapted
 import { useDebounce } from 'use-debounce';
-import type { JobListItem, GetJobsResponse } from '@acme/contracts';
+import type { GetJobsResponse } from '@acme/contracts';
 
 type FilterType = 'all' | 'embed' | 'decode';
 

@@ -16,8 +16,9 @@
 /coverage
 
 # next.js
-/.next/
-/out/
+**/.next/
+**/out/
+**/dist/
 
 # production
 /build
@@ -50,14 +51,17 @@ worker/node_modules/*
 openapi.yaml
 
 # secrets
-config/secrets/*
+**/config/secrets/*
 
 *storybook.log
 storybook-static
 
-
-
-
 # doc
 doc/*
 
+# cline setting
+.cline/*
+.clinerules/*
+
+cloud-sql-proxy
+apps/web/coverage/*

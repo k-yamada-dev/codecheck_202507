@@ -1,8 +1,16 @@
 import { exec } from 'child_process';
 import { promisify } from 'util';
+import { NextRequest } from 'next/server';
 
-import { contract, JOB_STATUS, JOB_TYPE } from '@acme/contracts';
-import { jobsRepo, JobListItemFromRepo } from '@acme/db';
+import {
+  contract,
+  JOB_STATUS,
+  JOB_TYPE,
+  GetJobsQuery,
+  DeleteJobParams,
+  CreateJobRequest,
+} from '@acme/contracts';
+import { jobsRepo, JobListItemFromRepo, JsonObject } from '@acme/db';
 import { createRouteHandler } from '@/lib/ts-rest/next-handler';
 
 import { getSessionInfo } from '@/lib/utils/apiAuth';
@@ -39,7 +47,8 @@ async function processJob(jobId: string) {
     });
   } catch (error) {
     const finishedAt = new Date();
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    const errorMessage =
+      error instanceof Error ? error.message : 'Unknown error';
     console.error(`[processJob] Failed to process job ${jobId}:`, error);
     await jobsRepo.updateResult(jobId, {
       status: JOB_STATUS.ERROR,
@@ -51,20 +60,32 @@ async function processJob(jobId: string) {
 }
 
 const router = createRouteHandler(contract.jobs, {
-  createJob: async ({ body, req }) => {
+  createJob: async ({
+    body,
+    req,
+  }: {
+    body: CreateJobRequest;
+    req: NextRequest;
+  }) => {
     const { tenantId, userId, userName } = await getSessionInfo();
+
+    // Accept thumbnailPath either as a top-level field or embedded in params.thumbnailPath
+    const thumbnailPathFromParams = (
+      (body.params ?? {}) as Record<string, unknown>
+    )?.thumbnailPath as string | null | undefined;
+    const thumbnailPath = body.thumbnailPath ?? thumbnailPathFromParams ?? null;
 
     const job = await jobsRepo.create({
       tenantId,
       userId,
       userName,
       type: body.type,
-      payload: body.payload as any,
       srcImagePath: body.srcImagePath,
       imageUrl: body.srcImagePath,
-      params: body.payload as any,
-      ip: (req.headers['x-forwarded-for'] as string) ?? '127.0.0.1',
-      ua: (req.headers['user-agent'] as string) ?? undefined,
+      thumbnailPath,
+      params: (body.params ?? {}) as JsonObject,
+      ip: req.headers.get('x-forwarded-for') ?? '127.0.0.1',
+      ua: req.headers.get('user-agent') ?? undefined,
     });
 
     // Do not await this, let it run in the background
@@ -82,7 +103,7 @@ const router = createRouteHandler(contract.jobs, {
       body: response,
     };
   },
-  getJobs: async ({ query }) => {
+  getJobs: async ({ query }: { query: GetJobsQuery }) => {
     const { tenantId } = await getSessionInfo();
 
     const result = await jobsRepo.findMany({ tenantId, ...query });
@@ -106,7 +127,7 @@ const router = createRouteHandler(contract.jobs, {
       },
     };
   },
-  deleteJob: async ({ params }) => {
+  deleteJob: async ({ params }: { params: DeleteJobParams }) => {
     const { tenantId } = await getSessionInfo();
 
     // Check if job exists and belongs to the tenant

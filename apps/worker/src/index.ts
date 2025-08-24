@@ -1,6 +1,6 @@
 import { PubSub, Message } from '@google-cloud/pubsub';
 import { JOB_STATUS } from '@acme/contracts';
-import { prisma } from '@acme/db';
+import { jobsRepo } from '@acme/db';
 
 const subName = 'jobs-sub';
 const concurrency = process.env.WORKER_CONCURRENCY
@@ -32,10 +32,7 @@ async function handleMessage(message: Message) {
 
   const startedAt = new Date();
   try {
-    await prisma.job.update({
-      where: { id: jobId },
-      data: { status: JOB_STATUS.RUNNING, startedAt },
-    });
+    await jobsRepo.updateResult(jobId, { status: JOB_STATUS.RUNNING, startedAt });
 
     // --- ここで実際の透かし埋め込み処理を実行 ---
     // 例: const result = await embedWatermark(job.imageUrl, job.params);
@@ -47,14 +44,11 @@ async function handleMessage(message: Message) {
     const finishedAt = new Date();
     const durationMs = finishedAt.getTime() - startedAt.getTime();
 
-    await prisma.job.update({
-      where: { id: jobId },
-      data: {
-        status: JOB_STATUS.DONE,
-        result,
-        finishedAt,
-        durationMs,
-      },
+    await jobsRepo.updateResult(jobId, {
+      status: JOB_STATUS.DONE,
+      result,
+      finishedAt,
+      durationMs,
     });
 
     console.log(`Job ${jobId} completed successfully.`);
@@ -62,14 +56,11 @@ async function handleMessage(message: Message) {
   } catch (error: unknown) {
     console.error(`Error processing job ${jobId}:`, error);
     const errorMessage = error instanceof Error ? error.message : String(error);
-    await prisma.job.update({
-      where: { id: jobId },
-      data: {
-        status: JOB_STATUS.ERROR,
-        errorCode: 'WORKER_ERROR',
-        errorMessage,
-        finishedAt: new Date(),
-      },
+    await jobsRepo.updateResult(jobId, {
+      status: JOB_STATUS.ERROR,
+      errorCode: 'WORKER_ERROR',
+      errorMessage,
+      finishedAt: new Date(),
     });
     // エラーが発生した場合、nack()で再試行させるか、ack()で諦めるかは要件による
     // 今回はnack()でリトライさせる

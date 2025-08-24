@@ -10,7 +10,7 @@ import {
   JobStatus,
   JOB_TYPE,
 } from '@acme/contracts';
-import { format } from 'date-fns';
+import { formatDate } from '@/lib/dateUtils';
 import { ImageCell } from '@/components/common/image-cell';
 import {
   Sheet,
@@ -150,8 +150,7 @@ const JobTable: React.FC<JobTableProps> = ({
           },
           {
             header: t('job.table.startedAt', 'Started At'),
-            accessor: (job) =>
-              format(new Date(job.startedAt), 'yyyy-MM-dd HH:mm:ss'),
+            accessor: (job) => formatDate(job.startedAt),
           },
           { header: t('job.table.user', 'User'), accessor: 'userName' },
           {
@@ -205,8 +204,7 @@ const JobTable: React.FC<JobTableProps> = ({
                 <strong>Status:</strong> {selectedJob.status}
               </div>
               <div>
-                <strong>Started At:</strong>{' '}
-                {format(new Date(selectedJob.startedAt), 'yyyy-MM-dd HH:mm:ss')}
+                <strong>Started At:</strong> {formatDate(selectedJob.startedAt)}
               </div>
               <div>
                 <strong>User:</strong> {selectedJob.userId}
