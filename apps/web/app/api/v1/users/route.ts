@@ -1,17 +1,24 @@
 import { createRouteHandler } from '@/lib/ts-rest/next-handler';
-import { contract, UserListQuerySchema } from '@acme/contracts';
+import {
+  contract,
+  UserListQuerySchema,
+  UserListQuery,
+  UserCreateRequest,
+  type RoleType,
+} from '@acme/contracts';
 import { prisma } from '@acme/db';
+import type { UserRoleRow, UserWithRoles, TransactionClient } from '@acme/db';
 import { getSessionInfo } from '@/lib/utils/apiAuth';
 import { createGipUserAndDbUser } from '@/lib/userService';
 import { ZodError } from 'zod';
 
 const router = createRouteHandler(contract.users, {
-  getUsers: async ({ query }: { query: any }) => {
+  getUsers: async ({ query }: { query: UserListQuery }) => {
     try {
       const session = await getSessionInfo();
       const { page, limit, search } = UserListQuerySchema.parse(query);
 
-      const where: any = {
+      const where: Record<string, unknown> = {
         tenantId: session.tenantId,
         ...(search && {
           OR: [
@@ -32,21 +39,20 @@ const router = createRouteHandler(contract.users, {
         prisma.user.count({ where }),
       ]);
 
-      const usersWithRoles = users.map((user: any) => ({
+      const usersWithRoles = users.map((user: UserWithRoles) => ({
         id: user.id,
         tenantId: user.tenantId,
         name: user.name,
         email: user.email,
         createdAt: user.createdAt.toISOString(),
         updatedAt: user.updatedAt.toISOString(),
-        userRoles: user.userRoles.map((ur: any) => ({
-          id: ur.id,
+        userRoles: user.userRoles.map((ur: UserRoleRow) => ({
           role: ur.role,
           userId: ur.userId,
           createdAt: ur.createdAt.toISOString(),
           updatedAt: ur.updatedAt.toISOString(),
         })),
-        roles: user.userRoles.map((ur: any) => ur.role),
+        roles: user.userRoles.map((ur: UserRoleRow) => ur.role),
       }));
 
       return {
@@ -76,10 +82,14 @@ const router = createRouteHandler(contract.users, {
       };
     }
   },
-  createUser: async ({ body }: { body: any }) => {
+  createUser: async ({ body }: { body: UserCreateRequest }) => {
     try {
       const session = await getSessionInfo();
       const { roles, ...userData } = body;
+      // API sends roles as string[], convert to RoleType[] used by services
+      const roleTypes: RoleType[] = (roles || []).map(
+        (r: string) => r as RoleType
+      );
 
       if (!roles || roles.length === 0) {
         return {
@@ -97,16 +107,18 @@ const router = createRouteHandler(contract.users, {
         };
       }
 
-      const newUserWithRoles = await prisma.$transaction(async (tx: any) => {
-        const user = await createGipUserAndDbUser({
-          prisma: tx,
-          tenantId: session.tenantId,
-          email: userData.email,
-          name: userData.name,
-          roles: roles,
-        });
-        return user;
-      });
+      const newUserWithRoles = await prisma.$transaction(
+        async (tx: TransactionClient) => {
+          const user = await createGipUserAndDbUser({
+            prisma: tx,
+            tenantId: session.tenantId,
+            email: userData.email,
+            name: userData.name,
+            roles: roleTypes,
+          });
+          return user;
+        }
+      );
 
       const responseData = {
         id: newUserWithRoles.id,
@@ -115,14 +127,13 @@ const router = createRouteHandler(contract.users, {
         email: newUserWithRoles.email,
         createdAt: newUserWithRoles.createdAt.toISOString(),
         updatedAt: newUserWithRoles.updatedAt.toISOString(),
-        userRoles: newUserWithRoles.userRoles.map((ur: any) => ({
-          id: ur.id,
+        userRoles: newUserWithRoles.userRoles.map((ur: UserRoleRow) => ({
           role: ur.role,
           userId: ur.userId,
           createdAt: ur.createdAt.toISOString(),
           updatedAt: ur.updatedAt.toISOString(),
         })),
-        roles: newUserWithRoles.userRoles.map((ur: any) => ur.role),
+        roles: newUserWithRoles.userRoles.map((ur: UserRoleRow) => ur.role),
       };
 
       return {

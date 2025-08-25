@@ -1,5 +1,9 @@
 import { Prisma, User } from '@prisma/client';
 import { prisma } from '../client';
+export type UserRow = User;
+
+// ユーザーとその userRoles を含むペイロード型（prisma の include を反映）
+export type UserWithRoles = Prisma.UserGetPayload<{ include: { userRoles: true } }>;
 
 // Data needed to create a user
 export type CreateUserData = {

@@ -96,7 +96,9 @@ export default function UserManagementPage() {
     }) => {
       // Note: updateUser may not be available in the current API
       // This is a placeholder implementation
-      throw new Error('Update user functionality not implemented');
+      throw new Error(
+        `Update user functionality not implemented ${userId} ${JSON.stringify(data)}`
+      );
     },
     ...commonMutationOptions,
     onSuccess: () => {
@@ -109,7 +111,7 @@ export default function UserManagementPage() {
     mutationFn: async (userId: string) => {
       // Note: deleteUser may not be available in the current API
       // This is a placeholder implementation
-      throw new Error('Delete user functionality not implemented');
+      throw new Error(`Delete user functionality not implemented ${userId}`);
     },
     ...commonMutationOptions,
     onSuccess: () => {

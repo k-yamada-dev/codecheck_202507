@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server';
 
 import { createRouteHandler } from '@/lib/ts-rest/next-handler';
-import { contract, JOB_TYPE } from '@acme/contracts';
+import { contract } from '@acme/contracts';
 import {
   GetLogsQuery,
   GetLogsResponse,
@@ -9,9 +9,9 @@ import {
   JobCreateResponse,
   LogItem,
 } from '@acme/contracts/schemas/logs';
-import { jobsRepo, FindJobsQuery } from '@acme/db';
-import type { Job } from '@prisma/client';
+import { jobsRepo, FindJobsQuery, JobListItemFromRepo } from '@acme/db';
 import { getSessionInfo } from '@/lib/utils/apiAuth';
+import { normalizeError } from '@/lib/errors/core';
 
 const router = createRouteHandler(contract.logs, {
   getLogs: async ({ query }: { query: GetLogsQuery }) => {
@@ -34,16 +34,8 @@ const router = createRouteHandler(contract.logs, {
       const hasNextPage = result.jobs.length > limit;
       const jobsPage = hasNextPage ? result.jobs.slice(0, limit) : result.jobs;
 
-      const jobs: LogItem[] = (jobsPage as unknown as Job[]).map((job: Job) => ({
-        id: job.id,
-        type: job.type,
-        status: job.status,
-        tenantId: job.tenantId,
-        userId: job.userId,
-        userName: job.userName,
-        srcImagePath: job.srcImagePath,
-        imageUrl: job.imageUrl,
-        thumbnailPath: job.thumbnailPath,
+      const jobs: LogItem[] = jobsPage.map((job: JobListItemFromRepo) => ({
+        ...job,
         params: (job.params as Record<string, unknown>) ?? {},
         result: (job.result as Record<string, unknown>) ?? {},
         startedAt: job.startedAt?.toISOString() || job.createdAt.toISOString(),
@@ -64,9 +56,10 @@ const router = createRouteHandler(contract.logs, {
         } satisfies GetLogsResponse,
       };
     } catch (error) {
-      console.error('Logs API error:', error);
+      const err = normalizeError(error);
+      console.error('Logs API error:', err);
       return {
-        status: 500,
+        status: err.status,
         body: {
           jobs: [],
           nextCursor: null,
@@ -75,7 +68,13 @@ const router = createRouteHandler(contract.logs, {
       };
     }
   },
-  createJob: async ({ body, req }: { body: JobCreateRequest; req: NextRequest }) => {
+  createJob: async ({
+    body,
+    req,
+  }: {
+    body: JobCreateRequest;
+    req: NextRequest;
+  }) => {
     try {
       const { tenantId, userId, userName } = await getSessionInfo();
 
@@ -84,7 +83,6 @@ const router = createRouteHandler(contract.logs, {
         userId,
         userName,
         type: body.type,
-        payload: body,
         srcImagePath: body.srcImagePath,
         imageUrl: body.srcImagePath,
         params: body.params || {},
@@ -109,21 +107,25 @@ const router = createRouteHandler(contract.logs, {
         body: response,
       };
     } catch (error) {
-      console.error('Create Job API error:', error);
-      const empty: JobCreateResponse = {
+      const err = normalizeError(error);
+      console.error('Create Job API error:', err);
+
+      // ts-restの型を満たすためのダミーレスポンス。本来はコントラクトにエラー型を定義すべき
+      const errorResponse: JobCreateResponse = {
         id: '',
-        type: '',
-        status: '',
+        type: body.type ?? 'unknown',
+        status: 'error',
         tenantId: '',
         userId: '',
         userName: '',
-        srcImagePath: '',
-        imageUrl: '',
-        createdAt: '',
+        srcImagePath: body.srcImagePath ?? '',
+        imageUrl: body.srcImagePath ?? '',
+        createdAt: new Date().toISOString(),
       };
+
       return {
-        status: 500,
-        body: empty,
+        status: err.status,
+        body: errorResponse,
       };
     }
   },

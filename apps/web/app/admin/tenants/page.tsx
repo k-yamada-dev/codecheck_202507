@@ -79,7 +79,9 @@ export default function TenantsPage() {
       body: Partial<CreateTenantRequest>;
     }) => {
       // Update APIが実装されていない場合のプレースホルダー
-      throw new Error('Update tenant API not implemented');
+      throw new Error(
+        `Update tenant API not implemented. Tried to update tenant ${data.id}`
+      );
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'tenants'] });
@@ -89,7 +91,9 @@ export default function TenantsPage() {
   const deleteTenantMutation = useMutation({
     mutationFn: async (data: { id: string }) => {
       // Delete APIが実装されていない場合のプレースホルダー
-      throw new Error('Delete tenant API not implemented');
+      throw new Error(
+        `Delete tenant API not implemented. Tried to delete tenant ${data.id}`
+      );
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'tenants'] });

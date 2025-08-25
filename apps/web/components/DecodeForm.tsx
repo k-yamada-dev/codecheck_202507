@@ -7,7 +7,7 @@ import { uploadFile } from '@/lib/gcs/upload.client';
 import { apiClient } from '@/lib/api/client';
 import { useMutation } from '@tanstack/react-query';
 import { JOB_TYPE } from '@acme/contracts';
-import type { CreateJobRequest } from '@acme/contracts';
+import type { CreateJobRequest, JobCreateResponse } from '@acme/contracts';
 import ImageUploader from '@/components/ImageUploader';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -83,7 +83,7 @@ export const DecodeForm: React.FC<DecodeFormProps> = ({ onSuccess }) => {
       const result = await decodeMutation.mutateAsync({
         type: JOB_TYPE.DECODE,
         srcImagePath: filePath,
-        payload: {
+        params: {
           blockSize: formData.blockSize,
           timer: formData.timer,
           widthScalingFrom: formData.widthScalingFrom,
@@ -96,7 +96,8 @@ export const DecodeForm: React.FC<DecodeFormProps> = ({ onSuccess }) => {
         },
       });
 
-      onSuccess?.((result as any)?.id || '');
+      const resData = result as JobCreateResponse;
+      onSuccess?.(resData?.id ?? '');
     } catch (error) {
       handleUIError(error);
     } finally {

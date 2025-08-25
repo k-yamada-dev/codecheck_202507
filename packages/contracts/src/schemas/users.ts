@@ -9,9 +9,9 @@ export const UserListQuerySchema = z.object({
 
 // User Role Schema
 export const UserRoleSchema = z.object({
-  id: z.string().uuid(),
-  role: z.string(),
   userId: z.string().uuid(),
+  role: z.string(),
+  assignedAt: z.string().datetime(),
   createdAt: z.string().datetime(),
   updatedAt: z.string().datetime(),
 });

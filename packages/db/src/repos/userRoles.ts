@@ -1,5 +1,6 @@
 import { UserRole, Role } from '@prisma/client';
 import { prisma } from '../client';
+export type UserRoleRow = UserRole;
 
 // Data for assigning a role
 export type AssignRoleData = {

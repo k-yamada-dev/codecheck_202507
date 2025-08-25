@@ -1,5 +1,6 @@
 import { Prisma, Tenant } from '@prisma/client';
 import { prisma } from '../client';
+export type TenantRow = Tenant;
 
 // Data needed to create a tenant
 export type CreateTenantData = {
