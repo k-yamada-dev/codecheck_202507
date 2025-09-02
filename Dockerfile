@@ -7,6 +7,12 @@ RUN corepack enable && corepack prepare pnpm@10.12.3 --activate
 
 # まず lockfile と package.json だけコピーして install を安定化
 COPY package.json pnpm-lock.yaml* ./
+COPY pnpm-workspace.yaml ./
+# ワークスペース内の package.json をコピー
+COPY apps/web/package.json ./apps/web/
+COPY packages/db/package.json ./packages/db/
+COPY packages/api-client/package.json ./packages/api-client/
+COPY packages/contracts/package.json ./packages/contracts/
 
 RUN pnpm install --frozen-lockfile
 
