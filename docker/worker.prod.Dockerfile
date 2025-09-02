@@ -14,7 +14,7 @@ RUN pnpm install --frozen-lockfile
 COPY . .
 
 # Prisma クライアント生成 → Worker ビルド
-RUN pnpm prisma generate
+RUN pnpm --filter @acme/db exec prisma generate
 RUN pnpm --filter worker build
 
 # ---------- runtime stage ----------
