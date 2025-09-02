@@ -32,7 +32,7 @@ RUN echo "NEXTAUTH_SECRET=dummy-secret-for-build" > apps/web/.env.local && \
     echo "CLOUD_SQL_INSTANCE_CONNECTION_NAME=dummy:connection:string" >> apps/web/.env.local && \
     echo "DATABASE_URL=postgresql://user:pass@host:port/db" >> apps/web/.env.local && \
     echo "FIREBASE_SERVICE_ACCOUNT_JSON={}" >> apps/web/.env.local && \
-    echo "NEXT_PUBLIC_FIREBASE_CONFIG={}" >> apps/web/.env.local
+    echo 'NEXT_PUBLIC_FIREBASE_CONFIG={"apiKey":"dummy","authDomain":"dummy.firebaseapp.com","projectId":"dummy","storageBucket":"dummy.appspot.com","messagingSenderId":"dummy","appId":"dummy"}' >> apps/web/.env.local
 
 RUN pnpm build
 
