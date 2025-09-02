@@ -25,7 +25,14 @@ COPY . .
 RUN pnpm --filter @acme/db exec prisma generate
 
 # Next.js のビルドに必要な環境変数を設定
-RUN echo "GCS_BUCKET_NAME=dummy-bucket-for-build" > apps/web/.env.local
+# Cloud Runの実行時に実際値が設定されるため、ビルドを通過させるためのダミー値を設定する
+RUN echo "NEXTAUTH_SECRET=dummy-secret-for-build" > apps/web/.env.local && \
+    echo "GCS_BUCKET_NAME=dummy-bucket-for-build" >> apps/web/.env.local && \
+    echo "NEXTAUTH_URL=http://localhost:3000" >> apps/web/.env.local && \
+    echo "CLOUD_SQL_INSTANCE_CONNECTION_NAME=dummy:connection:string" >> apps/web/.env.local && \
+    echo "DATABASE_URL=postgresql://user:pass@host:port/db" >> apps/web/.env.local && \
+    echo "FIREBASE_SERVICE_ACCOUNT_JSON={}" >> apps/web/.env.local && \
+    echo "NEXT_PUBLIC_FIREBASE_CONFIG={}" >> apps/web/.env.local
 
 RUN pnpm build
 
