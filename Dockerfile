@@ -13,6 +13,8 @@ COPY apps/web/package.json ./apps/web/
 COPY packages/db/package.json ./packages/db/
 COPY packages/api-client/package.json ./packages/api-client/
 COPY packages/contracts/package.json ./packages/contracts/
+# postinstallでprisma generateが実行されるため、スキーマファイルを先にコピー
+COPY packages/db/prisma ./packages/db/prisma
 
 RUN pnpm install --frozen-lockfile
 
