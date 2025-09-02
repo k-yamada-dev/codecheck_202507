@@ -5,7 +5,7 @@
   "packageManager": "pnpm@10.12.3",
   "scripts": {
     "dev": "pnpm -F @acme/web dev",
-    "build": "pnpm -r build && pnpm -F @acme/web build",
+    "build": "pnpm -r build",
     "start": "pnpm -F @acme/web start",
     "lint": "next lint",
     "lint:fix": "next lint --fix",
