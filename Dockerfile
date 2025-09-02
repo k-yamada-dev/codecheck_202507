@@ -23,6 +23,10 @@ COPY . .
 
 # Prisma クライアント生成 → Next ビルド
 RUN pnpm --filter @acme/db exec prisma generate
+
+# Next.js のビルドに必要な環境変数を設定
+RUN echo "GCS_BUCKET_NAME=dummy-bucket-for-build" > apps/web/.env.local
+
 RUN pnpm build
 
 # ---------- runtime stage ----------
