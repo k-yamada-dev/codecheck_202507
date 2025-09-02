@@ -80,6 +80,9 @@ steps:
 images:
   - '$_GCP_REGION-docker.pkg.dev/$PROJECT_ID/$_ARTIFACT_REGISTRY_REPO/$_SERVICE_NAME_WEB:$COMMIT_SHA'
   - '$_GCP_REGION-docker.pkg.dev/$PROJECT_ID/$_ARTIFACT_REGISTRY_REPO/$_SERVICE_NAME_WORKER:$COMMIT_SHA'
+
+options:
+  logging: CLOUD_LOGGING_ONLY
 # -------------------------------------------------------------------------------
 # 置換変数 (Cloud Build トリガーで設定)
 # -------------------------------------------------------------------------------
