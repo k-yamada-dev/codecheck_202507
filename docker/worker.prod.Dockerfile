@@ -41,18 +41,14 @@ COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
 
 # 起動スクリプトを作成
-# CLOUD_SQL_INSTANCE_CONNECTION_NAME は Cloud Run の環境変数で設定する
-# 'EOF' とクォートすることで、ビルド時の変数展開を防ぐ
-COPY <<'EOF' /app/start-worker.sh
-#!/bin/bash
-set -e
-# Cloud SQL Auth Proxy をバックグラウンドで起動
-# --structured-logs オプションでログを JSON 形式で出力
-/usr/local/bin/cloud-sql-proxy --structured-logs --port 5432 ${CLOUD_SQL_INSTANCE_CONNECTION_NAME} &
-# アプリケーションを起動。execでプロセスを置き換え、シグナルを正しく受け取れるようにする
-exec node dist/index.js
-EOF
-RUN chmod +x /app/start-worker.sh
+RUN echo '#!/bin/bash' > /app/start-worker.sh && \
+    echo 'set -e' >> /app/start-worker.sh && \
+    echo '# Cloud SQL Auth Proxy をバックグラウンドで起動' >> /app/start-worker.sh && \
+    echo '# --structured-logs オプションでログを JSON 形式で出力' >> /app/start-worker.sh && \
+    echo '/usr/local/bin/cloud-sql-proxy --structured-logs --port 5432 ${CLOUD_SQL_INSTANCE_CONNECTION_NAME} &' >> /app/start-worker.sh && \
+    echo '# アプリケーションを起動。execでプロセスを置き換え、シグナルを正しく受け取れるようにする' >> /app/start-worker.sh && \
+    echo 'exec node dist/index.js' >> /app/start-worker.sh && \
+    chmod +x /app/start-worker.sh
 
 # Worker のエントリポイント
 CMD ["/app/start-worker.sh"]
