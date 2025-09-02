@@ -4,7 +4,9 @@ if (!admin.apps.length) {
   try {
     const serviceAccountJson = process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
     if (!serviceAccountJson) {
-      throw new Error('FIREBASE_SERVICE_ACCOUNT_JSON is not set in environment variables.');
+      throw new Error(
+        'FIREBASE_SERVICE_ACCOUNT_JSON is not set in environment variables.'
+      );
     }
 
     const serviceAccount = JSON.parse(serviceAccountJson);

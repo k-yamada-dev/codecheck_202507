@@ -14,12 +14,17 @@ export async function GET(req: NextRequest) {
   try {
     const keycloakIssuer = config.auth.keycloak.issuer;
     if (keycloakIssuer) {
-      const logOutUrl = new URL(`${keycloakIssuer}/protocol/openid-connect/logout`);
+      const logOutUrl = new URL(
+        `${keycloakIssuer}/protocol/openid-connect/logout`
+      );
       // NEXTAUTH_URL をベースにリダイレクトURIを生成
       const baseUri = process.env.NEXTAUTH_URL || 'http://localhost:3000';
       const postLogoutRedirectUri = new URL('/login', baseUri).toString();
 
-      logOutUrl.searchParams.set('post_logout_redirect_uri', postLogoutRedirectUri);
+      logOutUrl.searchParams.set(
+        'post_logout_redirect_uri',
+        postLogoutRedirectUri
+      );
       logOutUrl.searchParams.set('id_token_hint', idToken);
       logOutUrl.searchParams.set('client_id', config.auth.keycloak.clientId);
       // KeycloakのログアウトURLにリダイレクト

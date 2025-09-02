@@ -17,7 +17,10 @@ export class DateFormatter {
     this.locale = locale;
   }
 
-  public formatDate(date: Date | string, format: string = 'YYYY-MM-DD'): string {
+  public formatDate(
+    date: Date | string,
+    format: string = 'YYYY-MM-DD'
+  ): string {
     const d = new Date(date);
 
     const year = d.getFullYear();

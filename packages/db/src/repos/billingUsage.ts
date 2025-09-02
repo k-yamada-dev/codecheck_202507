@@ -66,7 +66,7 @@ export const billingUsageRepo = {
           apiCalls: { increment: deltaApiCalls },
           storageGb: { increment: deltaStorageGb },
           amount: { increment: deltaAmount },
-        } as any, // incremental updates inferred by Prisma; cast to any if needed
+        } as Prisma.BillingUsageUpdateInput, // use explicit Prisma update input type for incremental ops
       });
     } else {
       return prisma.billingUsage.create({

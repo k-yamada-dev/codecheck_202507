@@ -97,14 +97,13 @@ const router = createRouteHandler(contract.admin, {
             },
           });
 
-          // 既存Firebaseユーザーがいないか確認
+          // 既存Firebaseユーザーがいないか確認（存在する場合はそのまま流用する）
           let firebaseUser;
           try {
             firebaseUser = await firebaseAdmin
               .auth()
               .getUserByEmail(adminEmail);
-            // 既に存在する場合はエラー返却
-            throw new Error('既にこのメールアドレスは登録されています');
+            // 既に存在するFirebaseユーザーがいる場合は、そのまま続行して外部IDを利用します。
           } catch (e) {
             const error = e as { code?: string; message?: string };
             if (error.code === 'auth/user-not-found') {
@@ -115,12 +114,8 @@ const router = createRouteHandler(contract.admin, {
                 displayName: 'Tenant Admin',
                 disabled: false,
               });
-            } else if (
-              error.message === '既にこのメールアドレスは登録されています'
-            ) {
-              throw e;
             } else {
-              // その他のFirebaseエラー
+              // その他のFirebaseエラーはそのまま上位へ伝搬
               throw e;
             }
           }

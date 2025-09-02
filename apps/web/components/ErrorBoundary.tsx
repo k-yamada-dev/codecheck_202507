@@ -58,7 +58,8 @@ const ErrorFallback: React.FC<{ error: Error | null }> = ({ error }) => {
             </h2>
 
             <p className="text-muted-foreground">
-              {error?.message || t('error.unknownError', '不明なエラーが発生しました')}
+              {error?.message ||
+                t('error.unknownError', '不明なエラーが発生しました')}
             </p>
 
             {isDevelopment && error && (
@@ -72,7 +73,10 @@ const ErrorFallback: React.FC<{ error: Error | null }> = ({ error }) => {
             )}
 
             <div className="flex gap-4">
-              <Button onClick={() => window.location.reload()} className="gap-2">
+              <Button
+                onClick={() => window.location.reload()}
+                className="gap-2"
+              >
                 <RefreshCw className="h-4 w-4" />
                 {t('error.reloadPage', 'ページを再読み込み')}
               </Button>

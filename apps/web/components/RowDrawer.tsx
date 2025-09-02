@@ -20,8 +20,14 @@ interface RowDrawerProps {
   image: WatermarkImage | null;
 }
 
-const RowDrawer: React.FC<RowDrawerProps> = ({ isOpen, onClose, onSave, image }) => {
-  const [currentSettings, setCurrentSettings] = useState<WatermarkSettings | null>(null);
+const RowDrawer: React.FC<RowDrawerProps> = ({
+  isOpen,
+  onClose,
+  onSave,
+  image,
+}) => {
+  const [currentSettings, setCurrentSettings] =
+    useState<WatermarkSettings | null>(null);
 
   useEffect(() => {
     if (image) {
@@ -48,7 +54,10 @@ const RowDrawer: React.FC<RowDrawerProps> = ({ isOpen, onClose, onSave, image })
 
   return (
     <Sheet open={isOpen} onOpenChange={onClose}>
-      <SheetContent side="right" className="w-[320px] sm:w-[420px] flex flex-col">
+      <SheetContent
+        side="right"
+        className="w-[320px] sm:w-[420px] flex flex-col"
+      >
         <SheetHeader>
           <SheetTitle>画像詳細・個別設定</SheetTitle>
           <SheetDescription>

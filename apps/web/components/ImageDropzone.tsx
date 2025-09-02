@@ -37,7 +37,8 @@ const ImageDropzone: React.FC<ImageDropzoneProps> = ({ onDrop }) => {
           <p className="text-primary">Drop the files here ...</p>
         ) : (
           <p className="text-muted-foreground">
-            Drag &apos;n&apos; drop some files here, or click to select files (up to 10)
+            Drag &apos;n&apos; drop some files here, or click to select files
+            (up to 10)
           </p>
         )}
       </div>

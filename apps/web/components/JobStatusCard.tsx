@@ -15,7 +15,10 @@ interface JobStatusCardProps {
 
 const statusMap: Record<
   JobStatus,
-  { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' }
+  {
+    label: string;
+    variant: 'default' | 'secondary' | 'destructive' | 'outline';
+  }
 > = {
   [JOB_STATUS.PENDING]: { label: 'Pending', variant: 'outline' },
   [JOB_STATUS.RUNNING]: { label: 'Running', variant: 'secondary' },
@@ -23,8 +26,16 @@ const statusMap: Record<
   [JOB_STATUS.ERROR]: { label: 'Failed', variant: 'destructive' },
 };
 
-const JobStatusCard: React.FC<JobStatusCardProps> = ({ jobId, status, progress, createdAt }) => {
-  const { label, variant } = statusMap[status] ?? { label: 'Unknown', variant: 'outline' };
+const JobStatusCard: React.FC<JobStatusCardProps> = ({
+  jobId,
+  status,
+  progress,
+  createdAt,
+}) => {
+  const { label, variant } = statusMap[status] ?? {
+    label: 'Unknown',
+    variant: 'outline',
+  };
 
   return (
     <Card>
@@ -36,10 +47,14 @@ const JobStatusCard: React.FC<JobStatusCardProps> = ({ jobId, status, progress, 
         {status === JOB_STATUS.RUNNING && progress !== undefined && (
           <div className="mt-2">
             <Progress value={progress} className="w-full" />
-            <p className="text-xs text-muted-foreground mt-1">{progress}% complete</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              {progress}% complete
+            </p>
           </div>
         )}
-        <p className="text-xs text-muted-foreground mt-2">Created at: {createdAt}</p>
+        <p className="text-xs text-muted-foreground mt-2">
+          Created at: {createdAt}
+        </p>
       </CardContent>
     </Card>
   );

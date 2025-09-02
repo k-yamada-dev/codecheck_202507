@@ -23,7 +23,7 @@ export default function ImageUploader({ onFilesSelected }: ImageUploaderProps) {
 
   const onDrop = useCallback(
     (acceptedFiles: File[]) => {
-      const newFiles = acceptedFiles.map(file =>
+      const newFiles = acceptedFiles.map((file) =>
         Object.assign(file, {
           preview: URL.createObjectURL(file),
           id: `${file.name}-${file.lastModified}-${Math.random()}`,
@@ -44,7 +44,7 @@ export default function ImageUploader({ onFilesSelected }: ImageUploaderProps) {
   });
 
   const removeFile = (fileToRemove: FileWithPreview) => {
-    const newFiles = files.filter(file => file !== fileToRemove);
+    const newFiles = files.filter((file) => file !== fileToRemove);
     setFiles(newFiles);
     onFilesSelected(newFiles);
     URL.revokeObjectURL(fileToRemove.preview); // Clean up memory
@@ -52,7 +52,7 @@ export default function ImageUploader({ onFilesSelected }: ImageUploaderProps) {
 
   useEffect(() => {
     // Clean up preview URLs on component unmount
-    return () => files.forEach(file => URL.revokeObjectURL(file.preview));
+    return () => files.forEach((file) => URL.revokeObjectURL(file.preview));
   }, [files]);
 
   return (
@@ -61,14 +61,19 @@ export default function ImageUploader({ onFilesSelected }: ImageUploaderProps) {
         {...getRootProps()}
         className={cn(
           'border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors',
-          isDragActive ? 'border-primary bg-primary/10' : 'border-border hover:border-primary/50'
+          isDragActive
+            ? 'border-primary bg-primary/10'
+            : 'border-border hover:border-primary/50'
         )}
       >
         <input {...getInputProps()} />
         <div className="flex flex-col items-center justify-center gap-4">
           <UploadCloud className="w-12 h-12 text-muted-foreground" />
           <p className="text-muted-foreground">
-            {t('imageUploader.dragAndDrop', "Drag 'n' drop files here, or click to select")}
+            {t(
+              'imageUploader.dragAndDrop',
+              "Drag 'n' drop files here, or click to select"
+            )}
           </p>
           <Button type="button" variant="outline" size="sm">
             {t('imageUploader.selectFiles', 'Select Files')}
@@ -81,8 +86,11 @@ export default function ImageUploader({ onFilesSelected }: ImageUploaderProps) {
             {t('imageUploader.selectedFiles', 'Selected Files')}
           </h4>
           <ul className="divide-y rounded-md border">
-            {files.map(file => (
-              <li key={file.id} className="flex items-center justify-between p-2">
+            {files.map((file) => (
+              <li
+                key={file.id}
+                className="flex items-center justify-between p-2"
+              >
                 <div className="flex items-center gap-2">
                   <Image
                     src={file.preview}
@@ -96,7 +104,11 @@ export default function ImageUploader({ onFilesSelected }: ImageUploaderProps) {
                     <p className="text-muted-foreground">{`${(file.size / 1024 / 1024).toFixed(2)} MB`}</p>
                   </div>
                 </div>
-                <Button variant="ghost" size="icon" onClick={() => removeFile(file)}>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => removeFile(file)}
+                >
                   <Trash2 className="h-4 w-4" />
                   <span className="sr-only">Remove</span>
                 </Button>

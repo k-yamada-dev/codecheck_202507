@@ -14,6 +14,7 @@ import { jobsRepo, JobListItemFromRepo, JsonObject } from '@acme/db';
 import { createRouteHandler } from '@/lib/ts-rest/next-handler';
 
 import { getSessionInfo } from '@/lib/utils/apiAuth';
+import { publishJob } from '@/lib/pubsub';
 
 const execAsync = promisify(exec);
 
@@ -88,8 +89,19 @@ const router = createRouteHandler(contract.jobs, {
       ua: req.headers.get('user-agent') ?? undefined,
     });
 
-    // Do not await this, let it run in the background
-    processJob(job.id);
+    // Publish to Pub/Sub so worker processes it asynchronously.
+    // If publish fails, fallback to local processing.
+    try {
+      await publishJob({ jobId: job.id, tenantId });
+      console.log(`Published job ${job.id} to Pub/Sub.`);
+    } catch (err) {
+      console.error(
+        'Failed to publish job to Pub/Sub, falling back to local processing:',
+        err
+      );
+      // Do not await to preserve original behavior
+      processJob(job.id);
+    }
 
     const response = {
       id: job.id,

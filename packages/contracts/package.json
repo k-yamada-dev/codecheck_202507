@@ -2,9 +2,12 @@
   "name": "@acme/contracts",
   "private": true,
   "version": "0.1.0",
-  "type": "module",
   "scripts": {
-    "build": "tsc -b"
+    "build": "tsc -b",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "type-check": "tsc --noEmit",
+    "format": "prettier --write ."
   },
   "dependencies": {
     "zod": "^3.23.8"
@@ -13,7 +16,7 @@
     "typescript": "^5.5.4"
   },
   "exports": {
-    ".": "./dist/index.js",
-    "./schemas/*": "./dist/schemas/*.js"
+    ".": "./dist/src/index.js",
+    "./schemas/*": "./dist/src/schemas/*.js"
   }
 }

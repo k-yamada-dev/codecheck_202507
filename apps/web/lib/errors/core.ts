@@ -46,7 +46,7 @@ export function normalizeError(e: unknown): AppError {
 
   // ③ ZodError 例
   if (e instanceof ZodError) {
-    const message = e.issues.map(issue => issue.message).join(', ');
+    const message = e.issues.map((issue) => issue.message).join(', ');
     return new AppError(ErrorCode.VALIDATION, message, 422);
   }
 

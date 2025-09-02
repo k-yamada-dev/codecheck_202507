@@ -45,9 +45,17 @@ export async function uploadFile<T>(file: File): Promise<T> {
 
   if (!response.ok) {
     if (isApiErrorResponse(data)) {
-      throw new AppError(data.error.code as ErrorCode, data.error.message, response.status);
+      throw new AppError(
+        data.error.code as ErrorCode,
+        data.error.message,
+        response.status
+      );
     } else {
-      throw new AppError(ErrorCode.UNKNOWN, data.message || 'File upload failed', response.status);
+      throw new AppError(
+        ErrorCode.UNKNOWN,
+        data.message || 'File upload failed',
+        response.status
+      );
     }
   }
 

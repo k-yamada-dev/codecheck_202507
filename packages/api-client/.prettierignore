@@ -1,0 +1,14 @@
+# Prettier ignore file (generated)
+# Ignore Next.js build output and package build/dist folders
+
+# Next.js build output
+.next
+.next/**
+
+# Generic distribution/build output
+dist
+dist/**
+
+# Optional: ignore other build outputs that may appear under packages/apps
+**/.next/**
+**/dist/**

@@ -15,7 +15,9 @@ const pubsub = new PubSub({
  */
 export async function publishJob(message: { jobId: string; tenantId: string }) {
   if (!process.env.PUBSUB_TOPIC_JOBS) {
-    throw new Error('PUBSUB_TOPIC_JOBS is not defined in environment variables.');
+    throw new Error(
+      'PUBSUB_TOPIC_JOBS is not defined in environment variables.'
+    );
   }
 
   const topic = pubsub.topic(process.env.PUBSUB_TOPIC_JOBS);

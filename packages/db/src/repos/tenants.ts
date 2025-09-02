@@ -28,7 +28,7 @@ export const tenantsRepo = {
   },
 
   findByTenantCode: (tenantCode: string): Promise<Tenant | null> => {
-    return prisma.tenant.findUnique({ where: { tenant_code: tenantCode } as any });
+    return prisma.tenant.findUnique({ where: { tenantCode } });
   },
 
   update: (id: string, data: UpdateTenantData) => {

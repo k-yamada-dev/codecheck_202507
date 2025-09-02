@@ -17,7 +17,10 @@ class ErrorLogger {
     return ErrorLogger.instance;
   }
 
-  public async logError(error: Error, errorInfo?: React.ErrorInfo): Promise<void> {
+  public async logError(
+    error: Error,
+    errorInfo?: React.ErrorInfo
+  ): Promise<void> {
     const errorData: ErrorLogData = {
       message: error.message,
       stack: error.stack,

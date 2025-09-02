@@ -148,7 +148,7 @@ export default function JobPage() {
       {
         type: job.type,
         srcImagePath: job.srcImagePath || '',
-        payload: job.params || {},
+        params: job.params || {},
       },
       {
         onSuccess: () => {

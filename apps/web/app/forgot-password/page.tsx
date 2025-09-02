@@ -6,7 +6,13 @@ import { handleUIError } from '@/lib/errors/uiHandler';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from '@/components/ui/card';
 
 export default function ForgotPasswordPage() {
   const { t } = useTranslation();
@@ -39,7 +45,9 @@ export default function ForgotPasswordPage() {
     <div className="container mx-auto flex items-center justify-center min-h-screen px-4">
       <Card className="w-full max-w-sm">
         <CardHeader>
-          <CardTitle className="text-2xl text-center">{t('forgotPassword.title')}</CardTitle>
+          <CardTitle className="text-2xl text-center">
+            {t('forgotPassword.title')}
+          </CardTitle>
           <CardDescription className="text-center">
             {t('forgotPassword.description')}
           </CardDescription>
@@ -48,7 +56,10 @@ export default function ForgotPasswordPage() {
           {sent ? (
             <div className="text-center text-green-600 space-y-4">
               <div>{t('forgotPassword.sent')}</div>
-              <a href="/login" className="inline-block text-sm text-blue-600 hover:underline">
+              <a
+                href="/login"
+                className="inline-block text-sm text-blue-600 hover:underline"
+              >
                 {t('forgotPassword.backToLogin')}
               </a>
             </div>
@@ -61,13 +72,15 @@ export default function ForgotPasswordPage() {
                   type="email"
                   placeholder={t('forgotPassword.emailPlaceholder')}
                   value={email}
-                  onChange={e => setEmail(e.target.value)}
+                  onChange={(e) => setEmail(e.target.value)}
                   autoComplete="email"
                   required
                 />
               </div>
               <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? t('forgotPassword.sending') : t('forgotPassword.send')}
+                {isLoading
+                  ? t('forgotPassword.sending')
+                  : t('forgotPassword.send')}
               </Button>
             </form>
           )}

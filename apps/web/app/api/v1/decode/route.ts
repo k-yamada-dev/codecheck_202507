@@ -6,55 +6,57 @@ import { getSessionInfo } from '@/lib/utils/apiAuth';
 import { execSync } from 'child_process';
 import { downloadFile } from '@/lib/gcs/storage.server';
 
-export const POST = createRouteHandler(contract.decode, async ({ body }: { body: DecodeRequest }) => {
-  try {
-    // Get session information
-    const { tenantId, userId, userName } = await getSessionInfo();
+export const POST = createRouteHandler(
+  contract.decode,
+  async ({ body }: { body: DecodeRequest }) => {
+    try {
+      // Get session information
+      const { tenantId, userId, userName } = await getSessionInfo();
 
-    const inputPath = await downloadFile(body.inputFileName);
+      const inputPath = await downloadFile(body.inputFileName);
 
-    const job = await jobsRepo.create({
-      tenantId,
-      userId,
-      userName,
-      type: JOB_TYPE.DECODE,
-      payload: body,
-      srcImagePath: inputPath,
-      imageUrl: inputPath,
-      params: body,
-    });
+      const job = await jobsRepo.create({
+        tenantId,
+        userId,
+        userName,
+        type: JOB_TYPE.DECODE,
+        srcImagePath: inputPath,
+        imageUrl: inputPath,
+        params: body,
+      });
 
-    // Execute decode command
-    const command = `decode -i ${inputPath} -b ${body.blockSize} -t ${body.timer} -rw ${body.widthScalingFrom}:${body.widthScalingTo} -rh ${body.heightScalingFrom}:${body.heightScalingTo} -ra ${body.rotationFrom}:${body.rotationTo} -log ${body.logfile}`;
+      // Execute decode command
+      const command = `decode -i ${inputPath} -b ${body.blockSize} -t ${body.timer} -rw ${body.widthScalingFrom}:${body.widthScalingTo} -rh ${body.heightScalingFrom}:${body.heightScalingTo} -ra ${body.rotationFrom}:${body.rotationTo} -log ${body.logfile}`;
 
-    const result = execSync(command).toString().trim();
+      const result = execSync(command).toString().trim();
 
-    await jobsRepo.updateResult(job.id, {
-      status: JOB_STATUS.DONE,
-      finishedAt: new Date(),
-      durationMs: new Date().getTime() - job.createdAt.getTime(),
-      result: {
-        output: result,
-        command: command,
-      },
-    });
+      await jobsRepo.updateResult(job.id, {
+        status: JOB_STATUS.DONE,
+        finishedAt: new Date(),
+        durationMs: new Date().getTime() - job.createdAt.getTime(),
+        result: {
+          output: result,
+          command: command,
+        },
+      });
 
-    return {
-      status: 200,
-      body: {
-        result,
-        success: true,
-      },
-    };
-  } catch (error) {
-    console.error('Decode API error:', error);
-    return {
-      status: 500,
-      body: {
-        result: 'Internal server error',
-        success: false,
-        error: error instanceof Error ? error.message : 'Unknown error',
-      },
-    };
+      return {
+        status: 200,
+        body: {
+          result,
+          success: true,
+        },
+      };
+    } catch (error) {
+      console.error('Decode API error:', error);
+      return {
+        status: 500,
+        body: {
+          result: 'Internal server error',
+          success: false,
+          error: error instanceof Error ? error.message : 'Unknown error',
+        },
+      };
+    }
   }
-});
+);

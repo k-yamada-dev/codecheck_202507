@@ -286,7 +286,7 @@ const WatermarkPage: React.FC = () => {
         );
       }
     }
-  }, [images, selectedImageIds]);
+  }, [images, selectedImageIds, createJobMutation, queryClient]);
 
   const handleDownloadResult = useCallback(
     (id: string) => {
@@ -346,7 +346,7 @@ const WatermarkPage: React.FC = () => {
         );
       }
     },
-    [allImages]
+    [allImages, createJobMutation, queryClient]
   );
 
   const selectedImages = images.filter((img) => selectedImageIds.has(img.id));

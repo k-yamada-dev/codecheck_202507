@@ -1,11 +1,9 @@
-import type { Prisma } from '@prisma/client';
-import { prisma } from '@acme/db';
+import { prisma, TransactionClient } from '@acme/db';
 import { USER_ROLE, type RoleType } from '@acme/contracts';
 import { firebaseAdmin } from '@/lib/firebaseAdmin';
 import { AppError, ErrorCode } from '@/lib/errors/core';
 
 void USER_ROLE;
-
 
 export async function inviteUser({
   tenantId,
@@ -18,42 +16,60 @@ export async function inviteUser({
   name: string;
   role: RoleType;
 }) {
-  // 既存ユーザー重複チェック
-  const exists = await prisma.user.findFirst({
+  // グローバルにメールでユーザーを検索（既存ユーザーがいれば流用）
+  let user = await prisma.user.findFirst({
     where: {
-      tenantId,
       email,
       isDeleted: false,
     },
   });
-  if (exists) {
-    throw new Error('既にこのメールアドレスは登録されています');
+
+  if (!user) {
+    // 招待スタブを作成（externalId は空文字で招待状態を表す既存仕様を維持）
+    user = await prisma.user.create({
+      data: {
+        provider: 'firebase',
+        externalId: '',
+        name,
+        email,
+        tenantId, // keep tenantId for backward compatibility; will be nullable in schema
+      },
+    });
+  } else {
+    // 既存ユーザーがいる場合はプロフィールを同期（必要ならば上書き）
+    await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        name: name || user.name,
+        email,
+      },
+    });
   }
 
-  // 仮登録（externalId: null, provider: 'firebase'）
-  const invitedUser = await prisma.user.create({
-    data: {
+  // user_roles に同一レコードが無ければ作成（重複は @@unique で防止）
+  const existingRole = await prisma.userRole.findFirst({
+    where: {
+      userId: user.id,
       tenantId,
-      provider: 'firebase',
-      externalId: '',
-      name,
-      email,
+      role,
+      isDeleted: false,
     },
   });
 
-  // ロール付与
-  await prisma.userRole.create({
-    data: {
-      userId: invitedUser.id,
-      tenantId,
-      role,
-    },
-  });
+  if (!existingRole) {
+    await prisma.userRole.create({
+      data: {
+        userId: user.id,
+        tenantId,
+        role,
+      },
+    });
+  }
 
   // パスワードリセットメール送信（招待メール兼用）
   await sendPasswordResetMail(email);
 
-  return invitedUser;
+  return user;
 }
 
 export async function createUser({
@@ -65,7 +81,7 @@ export async function createUser({
   provider,
   roles,
 }: {
-  prisma: Prisma.TransactionClient;
+  prisma: TransactionClient;
   tenantId: string;
   email: string;
   name: string;
@@ -73,19 +89,63 @@ export async function createUser({
   provider: string;
   roles: RoleType[];
 }) {
-  // 既存ユーザー重複チェック
+  // global に既存ユーザーを検索（externalId を優先、なければ email）
   const exists = await tx.user.findFirst({
     where: {
-      tenantId,
-      email,
-      isDeleted: false,
+      OR: [
+        { externalId: externalId, isDeleted: false },
+        { email: email, isDeleted: false },
+      ],
     },
   });
+
   if (exists) {
-    // AppError を使用して、より詳細なエラー情報を提供
-    throw new AppError(ErrorCode.VALIDATION, '既にこのメールアドレスは登録されています', 409);
+    // 既存ユーザーが見つかった場合は userRoles を追加して返却（重複は UNIQUE 制約で防ぐ）
+    const toCreate = roles.map((role) => ({
+      userId: exists.id,
+      tenantId,
+      role,
+    }));
+
+    for (const ur of toCreate) {
+      const found = await tx.userRole.findFirst({
+        where: {
+          userId: ur.userId,
+          tenantId: ur.tenantId,
+          role: ur.role,
+        },
+      });
+      if (!found) {
+        await tx.userRole.create({
+          data: {
+            userId: ur.userId,
+            tenantId: ur.tenantId,
+            role: ur.role,
+          },
+        });
+      }
+    }
+
+    // ユーザー情報を最新化
+    await tx.user.update({
+      where: { id: exists.id },
+      data: {
+        name: name || exists.name,
+        email,
+        provider,
+        externalId,
+      },
+    });
+
+    const updatedUser = await tx.user.findUnique({
+      where: { id: exists.id },
+      include: { userRoles: true },
+    });
+
+    return updatedUser!;
   }
 
+  // 新規ユーザー作成（externalId を持つ新規）
   const user = await tx.user.create({
     data: {
       tenantId,
@@ -94,7 +154,7 @@ export async function createUser({
       name,
       email,
       userRoles: {
-        create: roles.map(role => ({
+        create: roles.map((role) => ({
           tenantId: tenantId,
           role: role,
         })),
@@ -172,7 +232,7 @@ export async function createGipUserAndDbUser({
   name,
   roles,
 }: {
-  prisma: Prisma.TransactionClient;
+  prisma: TransactionClient;
   tenantId: string;
   email: string;
   name: string;
@@ -183,7 +243,11 @@ export async function createGipUserAndDbUser({
   try {
     firebaseUser = await firebaseAdmin.auth().getUserByEmail(email);
     // 既にGIPにユーザーが存在する場合、重複エラー
-    throw new AppError(ErrorCode.VALIDATION, 'このメールアドレスは既に登録されています', 409);
+    throw new AppError(
+      ErrorCode.VALIDATION,
+      'このメールアドレスは既に登録されています',
+      409
+    );
   } catch (e) {
     if (e instanceof AppError) throw e; // AppErrorはそのままスロー
 
@@ -199,7 +263,10 @@ export async function createGipUserAndDbUser({
     } else {
       // その他のFirebaseエラー
       console.error('Firebase user creation failed:', e);
-      throw new AppError(ErrorCode.UNKNOWN, '認証プロバイダーでのユーザー作成に失敗しました');
+      throw new AppError(
+        ErrorCode.UNKNOWN,
+        '認証プロバイダーでのユーザー作成に失敗しました'
+      );
     }
   }
 
@@ -246,7 +313,9 @@ export async function sendPasswordResetMail(email: string, tenantId?: string) {
 
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
-    throw new Error(`Failed to send password reset mail: ${res.status} ${JSON.stringify(err)}`);
+    throw new Error(
+      `Failed to send password reset mail: ${res.status} ${JSON.stringify(err)}`
+    );
   }
   return await res.json();
 }

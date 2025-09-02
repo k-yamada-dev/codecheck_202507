@@ -3,7 +3,7 @@ import { USER_ROLE, type RoleType } from '@acme/contracts';
 /**
  * Roles are defined in the contracts package.
  * This file re-exports them for use in the client-side application.
-*/
+ */
 
 // Re-export the enum directly
 export { USER_ROLE };

@@ -11,7 +11,10 @@ const THUMBNAIL_HEIGHT = 64;
  * @param outputPath - The path where the thumbnail will be saved.
  * @returns A promise that resolves when the thumbnail is created.
  */
-export async function createThumbnail(inputPath: string, outputPath: string): Promise<void> {
+export async function createThumbnail(
+  inputPath: string,
+  outputPath: string
+): Promise<void> {
   try {
     await fs.mkdir(path.dirname(outputPath), { recursive: true });
     await sharp(inputPath)
@@ -33,10 +36,15 @@ export async function createThumbnail(inputPath: string, outputPath: string): Pr
  * @param outputPath - The path where the optimized image will be saved.
  * @returns A promise that resolves when the image is optimized.
  */
-export async function optimizeImage(inputPath: string, outputPath: string): Promise<void> {
+export async function optimizeImage(
+  inputPath: string,
+  outputPath: string
+): Promise<void> {
   try {
     await fs.mkdir(path.dirname(outputPath), { recursive: true });
-    await sharp(inputPath).jpeg({ quality: 90, progressive: true }).toFile(outputPath);
+    await sharp(inputPath)
+      .jpeg({ quality: 90, progressive: true })
+      .toFile(outputPath);
   } catch (error) {
     console.error(`Failed to optimize image ${inputPath}:`, error);
     throw new Error('Image optimization failed');

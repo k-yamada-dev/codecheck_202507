@@ -8,40 +8,58 @@ import eslintConfigPrettier from 'eslint-config-prettier';
 const compat = new FlatCompat({ baseDirectory: import.meta.dirname });
 
 export default [
-  // ignore
+  // ========= 0) 無条件のグローバル ignore（一番上） =========
   {
     ignores: [
-      'node_modules',
-      '.next',
-      'dist',
+      // 生成物
+      'dist/**',
+      '**/dist/**',
+      './dist/**',
+      'packages/*/dist/**',
+      '**/.next/**',
+      '**/coverage/**',
       'coverage',
+      '__generated__/**',
+      '**/__generated__/**',
+      '__generated__',
       'lib/zod/**',
       '**/lib/zod/**',
-      '__generated__',
-      '**/__generated__/**',
+      // 型定義
+      '**/*.d.ts',
+      '**/dist/**/*.d.ts',
+      // その他
+      '**/node_modules/**',
+      '.vscode',
+      '*.log',
     ],
-    languageOptions: { ecmaVersion: 2023, sourceType: 'module' },
   },
 
-  // JS 基本
+  // ========= 1) packages 以下をさらに強制除外（サブディレクトリ実行対策） =========
+  {
+    files: ['packages/**/*'],
+    ignores: ['dist/**', '**/dist/**', './dist/**', '**/*.d.ts', '**/**/__generated__/**'],
+  },
+
+  // ========= 2) 共通ベース =========
   js.configs.recommended,
-
-  // ← ここで legacy 形式の "next/core-web-vitals" を Flat に取り込む
-  ...compat.config({ extends: ['next/core-web-vitals'] }),
-
-  // TypeScript（型情報なし＝高速）
   ...tseslint.configs.recommended,
 
-  // .eslintrc.json の TS ルール
+  // ========= 3) Next ルールは apps/web のみに限定 =========
+  ...compat
+    .config({ extends: ['next/core-web-vitals'] })
+    .map(cfg => ({ ...cfg, files: ['apps/web/**/*.{ts,tsx,js,jsx}'] })),
+
+  // ========= 4) TS 追加ルール（.d.ts は明示的に除外） =========
   {
     files: ['**/*.{ts,tsx}'],
+    ignores: ['**/*.d.ts'], // ← これが効く
     rules: {
       '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
       '@typescript-eslint/no-explicit-any': 'error',
     },
   },
 
-  // react-hooks ルール
+  // ========= 5) react-hooks =========
   {
     files: ['**/*.{js,jsx,ts,tsx}'],
     plugins: { 'react-hooks': reactHooks },
@@ -51,14 +69,16 @@ export default [
     },
   },
 
-  // Prettierとの衝突を無効化（eslint-config-prettier）
-  eslintConfigPrettier,
+  // ========= 6) Prettier 衝突無効化 =========
+  ...(Array.isArray(eslintConfigPrettier) ? eslintConfigPrettier : [eslintConfigPrettier]),
 
-  // Prettierプラグインのルールを有効化
+  // ========= 7) Prettier プラグイン =========
   {
-    plugins: { prettier: await import('eslint-plugin-prettier') },
-    rules: {
-      'prettier/prettier': 'error',
+    plugins: {
+      prettier:
+        (await import('eslint-plugin-prettier')).default ??
+        (await import('eslint-plugin-prettier')),
     },
+    rules: { 'prettier/prettier': 'error' },
   },
 ];

@@ -30,6 +30,17 @@ async function handleMessage(message: Message) {
     return;
   }
 
+  // Validate jobId is a UUID to avoid passing invalid IDs to Prisma
+  const isUuid = (s: string) =>
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(s);
+
+  if (!isUuid(jobId)) {
+    console.error(`Invalid jobId format received: ${jobId}`);
+    // ack to avoid retrying invalid messages that will always fail
+    message.ack();
+    return;
+  }
+
   const startedAt = new Date();
   try {
     await jobsRepo.updateResult(jobId, { status: JOB_STATUS.RUNNING, startedAt });

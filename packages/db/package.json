@@ -1,6 +1,5 @@
 {
   "name": "@acme/db",
-  "type": "module",
   "exports": {
     ".": "./dist/index.js"
   },
@@ -18,17 +17,19 @@
     "migrate:status": "prisma migrate status",
     "migrate:dev": "prisma migrate dev",
     "migrate:generate": "prisma generate",
-    "seed": "prisma db seed",
-    "reset": "prisma migrate reset -f --skip-generate"
-  },
-  "prisma": {
-    "seed": "tsx prisma/seed.ts"
+    "seed": "prisma db seed -- --compiler tsx prisma/seed.ts",
+    "reset": "prisma migrate reset -f --skip-generate",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "type-check": "tsc --noEmit"
   },
   "dependencies": {
     "@prisma/client": "6.14.0"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
+    "dotenv": "^17.2.1",
     "prisma": "6.14.0",
     "typescript": "^5.5.4"
   }

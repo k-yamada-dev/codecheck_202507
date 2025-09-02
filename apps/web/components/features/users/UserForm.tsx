@@ -22,9 +22,14 @@ import { ALL_ROLES } from '@/lib/types/role';
 // We handle the logic of what to send to the API in the submit handler.
 const UserFormSchema = z.object({
   id: z.string().optional(),
-  name: z.string().min(1, '名前は必須です').max(50, '名前は50文字以内で入力してください'),
+  name: z
+    .string()
+    .min(1, '名前は必須です')
+    .max(50, '名前は50文字以内で入力してください'),
   email: z.string().email('有効なメールアドレスを入力してください'),
-  roles: z.array(z.enum(ALL_ROLES)).min(1, '少なくとも1つのロールを選択してください'),
+  roles: z
+    .array(z.enum(ALL_ROLES))
+    .min(1, '少なくとも1つのロールを選択してください'),
 });
 
 export type UserFormValues = z.infer<typeof UserFormSchema>;
@@ -35,7 +40,11 @@ interface UserFormProps {
   isSubmitting?: boolean;
 }
 
-export function UserForm({ onSubmit, defaultValues, isSubmitting }: UserFormProps) {
+export function UserForm({
+  onSubmit,
+  defaultValues,
+  isSubmitting,
+}: UserFormProps) {
   const form = useForm<UserFormValues>({
     resolver: zodResolver(UserFormSchema),
     defaultValues: defaultValues || { name: '', email: '', roles: [] },
@@ -77,7 +86,7 @@ export function UserForm({ onSubmit, defaultValues, isSubmitting }: UserFormProp
             <FormItem>
               <FormLabel>ロール</FormLabel>
               <div className="space-y-2">
-                {ALL_ROLES.map(role => (
+                {ALL_ROLES.map((role) => (
                   <FormField
                     key={role}
                     control={form.control}
@@ -91,10 +100,17 @@ export function UserForm({ onSubmit, defaultValues, isSubmitting }: UserFormProp
                           <FormControl>
                             <Checkbox
                               checked={field.value?.includes(role)}
-                              onCheckedChange={checked => {
+                              onCheckedChange={(checked) => {
                                 return checked
-                                  ? field.onChange([...(field.value || []), role])
-                                  : field.onChange(field.value?.filter(value => value !== role));
+                                  ? field.onChange([
+                                      ...(field.value || []),
+                                      role,
+                                    ])
+                                  : field.onChange(
+                                      field.value?.filter(
+                                        (value) => value !== role
+                                      )
+                                    );
                               }}
                             />
                           </FormControl>

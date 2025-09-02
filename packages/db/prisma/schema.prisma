@@ -9,18 +9,6 @@ generator client {
   previewFeatures = ["postgresqlExtensions"]
 }
 
-// generator zod {
-//   provider              = "prisma-zod-generator"
-//   output                = "../src/generated/zod"
-//   isGenerateSelect      = true
-//   isGenerateInclude     = true
-//   relationModel         = true
-//   modelCase             = "camelCase"
-//   modelSuffix           = "Schema"
-//   imports               = "import { z } from 'zod'; import type { Prisma } from '@prisma/client';"
-//   prismaJsonNullability = true
-// }
-
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
@@ -47,7 +35,7 @@ enum JobStatus {
 }
 
 model Tenant {
-  id         String    @id @default(cuid())
+  id         String    @id @default(uuid()) @db.Uuid
   name       String
   tenantCode String    @unique @map("tenant_code")
   isDeleted  Boolean   @default(false) @map("is_deleted")
@@ -66,7 +54,7 @@ model Tenant {
 
 model User {
   id         String  @id @default(uuid()) @db.Uuid
-  tenantId   String  @map("tenant_id")
+  tenantId   String? @map("tenant_id") @db.Uuid
   provider   String
   externalId String  @map("external_id")
   name       String
@@ -74,7 +62,7 @@ model User {
   tenantCode String? @map("tenant_code")
   userCode   String? @map("user_code")
 
-  tenant    Tenant     @relation(fields: [tenantId], references: [id])
+  tenant    Tenant?    @relation(fields: [tenantId], references: [id])
   jobs      Job[]
   userRoles UserRole[]
 
@@ -90,7 +78,7 @@ model User {
 
 model Job {
   id            String    @id @default(uuid()) @db.Uuid
-  tenantId      String    @map("tenant_id")
+  tenantId      String    @map("tenant_id") @db.Uuid
   userId        String    @map("user_id") @db.Uuid
   userName      String    @map("user_name")
   type          JobType
@@ -129,7 +117,7 @@ model Job {
 
 model Log {
   id       String @id @default(cuid())
-  tenantId String @map("tenant_id")
+  tenantId String @map("tenant_id") @db.Uuid
   jobId    String @map("job_id") @db.Uuid
   action   String
   userId   String @map("user_id")
@@ -149,7 +137,7 @@ model Log {
 
 model BillingUsage {
   id          String    @id @default(cuid())
-  tenantId    String    @map("tenant_id")
+  tenantId    String    @map("tenant_id") @db.Uuid
   month       String
   uploads     Int
   apiCalls    Int       @map("api_calls")
@@ -170,8 +158,9 @@ model BillingUsage {
 }
 
 model UserRole {
+  id         String   @id @default(uuid()) @db.Uuid
   userId     String   @map("user_id") @db.Uuid
-  tenantId   String   @map("tenant_id")
+  tenantId   String   @map("tenant_id") @db.Uuid
   role       Role
   assignedAt DateTime @default(now()) @map("assigned_at")
 
@@ -184,6 +173,6 @@ model UserRole {
   createdAt DateTime  @default(now()) @map("created_at")
   updatedAt DateTime  @updatedAt @map("updated_at")
 
-  @@id([userId, tenantId, role])
+  @@unique([userId, tenantId, role])
   @@map("user_roles")
 }

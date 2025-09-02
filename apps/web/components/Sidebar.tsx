@@ -7,7 +7,12 @@ import { useSession } from 'next-auth/react';
 import { navItems } from '@/config/navigation';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { ChevronLeft, Menu } from 'lucide-react';
 
@@ -31,7 +36,9 @@ export default function Sidebar() {
 
   const userRoles = session?.user?.roles;
   const menuItems = userRoles
-    ? navItems.filter(item => !item.roles || item.roles.some(r => userRoles.includes(r)))
+    ? navItems.filter(
+        (item) => !item.roles || item.roles.some((r) => userRoles.includes(r))
+      )
     : [];
 
   const toggleSidebar = () => {
@@ -40,7 +47,7 @@ export default function Sidebar() {
 
   const navContent = (
     <nav className="flex-grow px-2 py-4 space-y-2">
-      {menuItems.map(item => (
+      {menuItems.map((item) => (
         <Tooltip key={item.path} delayDuration={0}>
           <TooltipTrigger asChild>
             <Button
@@ -49,10 +56,14 @@ export default function Sidebar() {
               onClick={() => router.push(item.path)}
             >
               <item.icon className="h-5 w-5" />
-              <span className={cn('ml-4', { hidden: isCollapsed })}>{t(item.text)}</span>
+              <span className={cn('ml-4', { hidden: isCollapsed })}>
+                {t(item.text)}
+              </span>
             </Button>
           </TooltipTrigger>
-          {isCollapsed && <TooltipContent side="right">{t(item.text)}</TooltipContent>}
+          {isCollapsed && (
+            <TooltipContent side="right">{t(item.text)}</TooltipContent>
+          )}
         </Tooltip>
       ))}
     </nav>
@@ -63,7 +74,11 @@ export default function Sidebar() {
       <div className="md:hidden">
         <Sheet>
           <SheetTrigger asChild>
-            <Button variant="ghost" size="icon" className="absolute top-3 left-3 z-50">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="absolute top-3 left-3 z-50"
+            >
               <Menu className="h-5 w-5" />
             </Button>
           </SheetTrigger>
@@ -87,12 +102,16 @@ export default function Sidebar() {
       >
         <div className="flex flex-col h-full">
           <div className="p-2 flex items-center justify-between border-b h-14">
-            <h1 className={cn('font-bold text-lg pl-2', { hidden: isCollapsed })}>
+            <h1
+              className={cn('font-bold text-lg pl-2', { hidden: isCollapsed })}
+            >
               {t('common.appName')}
             </h1>
             <Button variant="ghost" size="icon" onClick={toggleSidebar}>
               <ChevronLeft
-                className={cn('h-5 w-5 transition-transform', { 'rotate-180': isCollapsed })}
+                className={cn('h-5 w-5 transition-transform', {
+                  'rotate-180': isCollapsed,
+                })}
               />
             </Button>
           </div>

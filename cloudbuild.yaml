@@ -1,0 +1,91 @@
+steps:
+  # -----------------------------------------------------------------------------
+  # Build and Push Web App
+  # -----------------------------------------------------------------------------
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'Build Web'
+    args:
+      - 'build'
+      - '--tag=$_GCP_REGION-docker.pkg.dev/$PROJECT_ID/$_ARTIFACT_REGISTRY_REPO/$_SERVICE_NAME_WEB:$COMMIT_SHA'
+      - '--file=Dockerfile'
+      - '.'
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'Push Web'
+    args:
+      - 'push'
+      - '$_GCP_REGION-docker.pkg.dev/$PROJECT_ID/$_ARTIFACT_REGISTRY_REPO/$_SERVICE_NAME_WEB:$COMMIT_SHA'
+
+  # -----------------------------------------------------------------------------
+  # Deploy Web App to Cloud Run
+  # -----------------------------------------------------------------------------
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    id: 'Deploy Web'
+    entrypoint: gcloud
+    args:
+      - 'run'
+      - 'deploy'
+      - '$_SERVICE_NAME_WEB'
+      - '--image=$_GCP_REGION-docker.pkg.dev/$PROJECT_ID/$_ARTIFACT_REGISTRY_REPO/$_SERVICE_NAME_WEB:$COMMIT_SHA'
+      - '--region'
+      - '$_GCP_REGION'
+      - '--platform'
+      - 'managed'
+      - '--quiet'
+      - '--add-cloudsql-instances=$_CLOUD_SQL_INSTANCE_CONNECTION_NAME'
+      # --- 必要に応じて以下のオプションを有効化してください ---
+      # - '--allow-unauthenticated' # 認証なしでアクセス許可
+      # - '--service-account=your-service-account@your-project.iam.gserviceaccount.com'
+      # - '--update-env-vars=KEY1=VALUE1,KEY2=VALUE2'
+      # - '--set-secrets=SECRET_NAME=secret-name:latest'
+
+  # -----------------------------------------------------------------------------
+  # Build and Push Worker
+  # -----------------------------------------------------------------------------
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'Build Worker'
+    args:
+      - 'build'
+      - '--tag=$_GCP_REGION-docker.pkg.dev/$PROJECT_ID/$_ARTIFACT_REGISTRY_REPO/$_SERVICE_NAME_WORKER:$COMMIT_SHA'
+      - '--file=docker/worker.prod.Dockerfile'
+      - '.'
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'Push Worker'
+    args:
+      - 'push'
+      - '$_GCP_REGION-docker.pkg.dev/$PROJECT_ID/$_ARTIFACT_REGISTRY_REPO/$_SERVICE_NAME_WORKER:$COMMIT_SHA'
+
+  # -----------------------------------------------------------------------------
+  # Deploy Worker to Cloud Run
+  # -----------------------------------------------------------------------------
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    id: 'Deploy Worker'
+    entrypoint: gcloud
+    args:
+      - 'run'
+      - 'deploy'
+      - '$_SERVICE_NAME_WORKER'
+      - '--image=$_GCP_REGION-docker.pkg.dev/$PROJECT_ID/$_ARTIFACT_REGISTRY_REPO/$_SERVICE_NAME_WORKER:$COMMIT_SHA'
+      - '--region'
+      - '$_GCP_REGION'
+      - '--platform'
+      - 'managed'
+      - '--quiet'
+      - '--no-allow-unauthenticated' # Pub/Subからの呼び出しのみ許可
+      - '--add-cloudsql-instances=$_CLOUD_SQL_INSTANCE_CONNECTION_NAME'
+      # --- 必要に応じて以下のオプションを有効化してください ---
+      # - '--service-account=your-service-account@your-project.iam.gserviceaccount.com'
+      # - '--update-env-vars=KEY1=VALUE1,KEY2=VALUE2'
+      # - '--set-secrets=SECRET_NAME=secret-name:latest'
+
+images:
+  - '$_GCP_REGION-docker.pkg.dev/$PROJECT_ID/$_ARTIFACT_REGISTRY_REPO/$_SERVICE_NAME_WEB:$COMMIT_SHA'
+  - '$_GCP_REGION-docker.pkg.dev/$PROJECT_ID/$_ARTIFACT_REGISTRY_REPO/$_SERVICE_NAME_WORKER:$COMMIT_SHA'
+# -------------------------------------------------------------------------------
+# 置換変数 (Cloud Build トリガーで設定)
+# -------------------------------------------------------------------------------
+# _GCP_REGION: GCPリージョン (例: asia-northeast1)
+# _ARTIFACT_REGISTRY_REPO: Artifact Registry のリポジトリ名
+# _SERVICE_NAME_WEB: WebアプリのCloud Runサービス名
+# _SERVICE_NAME_WORKER: WorkerのCloud Runサービス名
+# _CLOUD_SQL_INSTANCE_CONNECTION_NAME: Cloud SQL の接続名
+# -------------------------------------------------------------------------------

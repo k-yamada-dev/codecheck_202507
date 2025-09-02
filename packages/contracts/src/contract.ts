@@ -14,6 +14,16 @@ export const contract = c.router({
   logs: LogsApiMeta,
   users: UsersApiMeta,
   admin: AdminApiMeta,
+  session: {
+    setTenant: {
+      method: 'PATCH',
+      path: '/api/session/tenant',
+      body: z.object({ tenantId: z.string() }),
+      responses: {
+        200: z.object({ ok: z.boolean(), tenantId: z.string() }),
+      },
+    },
+  },
   getLogById: {
     method: 'GET',
     path: '/api/v1/logs/:id',

@@ -9,10 +9,14 @@ export function PasswordInput(props: PasswordInputProps) {
 
   return (
     <div className="relative w-full">
-      <Input {...props} type={show ? 'text' : 'password'} autoComplete="current-password" />
+      <Input
+        {...props}
+        type={show ? 'text' : 'password'}
+        autoComplete="current-password"
+      />
       <button
         type="button"
-        onClick={() => setShow(v => !v)}
+        onClick={() => setShow((v) => !v)}
         className="absolute right-2 top-1/2 -translate-y-1/2 p-1 transition-opacity"
         aria-label={show ? 'パスワードを隠す' : 'パスワードを表示'}
         aria-pressed={show}

@@ -4,7 +4,6 @@ import { prisma } from '@acme/db';
 import { withErrorHandling } from '@/lib/errors/apiHandler';
 import { AppError, ErrorCode } from '@/lib/errors/core';
 
-
 export const GET = withErrorHandling(
   async (req: NextRequest, { params }: { params: { id: string } }) => {
     const { id } = params;

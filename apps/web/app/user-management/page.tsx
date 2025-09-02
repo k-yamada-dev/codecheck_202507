@@ -22,13 +22,14 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { USER_ROLE } from '@acme/contracts';
+import type { RoleType } from '@acme/contracts';
 
 // Define types locally since they may not be exported from contracts
 type UserResponse = {
   id: string;
   name: string;
   email: string;
-  roles: string[];
+  roles: RoleType[];
   updatedAt: string;
 };
 

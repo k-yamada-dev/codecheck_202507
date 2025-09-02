@@ -25,7 +25,9 @@ import {
 
 export interface WatermarkParamFormProps {
   initialSettings: WatermarkSettings;
-  onApply: (settings: Partial<WatermarkSettings> & { autoIncrement?: boolean }) => void;
+  onApply: (
+    settings: Partial<WatermarkSettings> & { autoIncrement?: boolean }
+  ) => void;
   selectedCount: number;
   images: WatermarkImage[];
 }
@@ -36,7 +38,8 @@ export const WatermarkParamForm: React.FC<WatermarkParamFormProps> = ({
   selectedCount,
   images,
 }) => {
-  const [settings, setSettings] = useState<Partial<WatermarkSettings>>(initialSettings);
+  const [settings, setSettings] =
+    useState<Partial<WatermarkSettings>>(initialSettings);
   const [isChanged, setIsChanged] = useState(false);
   const [autoIncrement, setAutoIncrement] = useState(false);
 
@@ -55,7 +58,7 @@ export const WatermarkParamForm: React.FC<WatermarkParamFormProps> = ({
     key: keyof WatermarkSettings,
     value: WatermarkSettings[keyof WatermarkSettings]
   ) => {
-    setSettings(prev => ({ ...prev, [key]: value }));
+    setSettings((prev) => ({ ...prev, [key]: value }));
     setIsChanged(true);
   };
 
@@ -71,7 +74,8 @@ export const WatermarkParamForm: React.FC<WatermarkParamFormProps> = ({
   };
 
   const baseText = settings.text || '';
-  const isApplyDisabled = !isChanged || selectedCount === 0 || !isTextValid(baseText);
+  const isApplyDisabled =
+    !isChanged || selectedCount === 0 || !isTextValid(baseText);
 
   if (autoIncrement) {
     // 連番付与時の最大文字数チェック
@@ -86,7 +90,7 @@ export const WatermarkParamForm: React.FC<WatermarkParamFormProps> = ({
     }
   }
 
-  const hasJpeg = images.some(img => img.file.type === 'image/jpeg');
+  const hasJpeg = images.some((img) => img.file.type === 'image/jpeg');
 
   return (
     <div className="flex flex-col h-full">
@@ -103,7 +107,7 @@ export const WatermarkParamForm: React.FC<WatermarkParamFormProps> = ({
             id="watermark-text"
             placeholder="例: ACUA-2025"
             value={settings.text || ''}
-            onChange={e => handleValueChange('text', e.target.value)}
+            onChange={(e) => handleValueChange('text', e.target.value)}
             maxLength={64}
           />
           {!isTextValid(baseText) && (
@@ -116,7 +120,7 @@ export const WatermarkParamForm: React.FC<WatermarkParamFormProps> = ({
           <Checkbox
             id="auto-increment"
             checked={autoIncrement}
-            onCheckedChange={checked => setAutoIncrement(!!checked)}
+            onCheckedChange={(checked) => setAutoIncrement(!!checked)}
           />
           <Label htmlFor="auto-increment">行ごとに _1, _2, ... を付与</Label>
         </div>
@@ -124,7 +128,9 @@ export const WatermarkParamForm: React.FC<WatermarkParamFormProps> = ({
           <Label>エンコードモード</Label>
           <Select
             value={settings.encodeMode}
-            onValueChange={(value: EncodeMode) => handleValueChange('encodeMode', value)}
+            onValueChange={(value: EncodeMode) =>
+              handleValueChange('encodeMode', value)
+            }
           >
             <SelectTrigger>
               <SelectValue placeholder="選択..." />
@@ -141,7 +147,9 @@ export const WatermarkParamForm: React.FC<WatermarkParamFormProps> = ({
             <Label>JPEG 埋込モード</Label>
             <Select
               value={settings.jpegEmbedMode}
-              onValueChange={(value: JpegEmbedMode) => handleValueChange('jpegEmbedMode', value)}
+              onValueChange={(value: JpegEmbedMode) =>
+                handleValueChange('jpegEmbedMode', value)
+              }
             >
               <SelectTrigger>
                 <SelectValue placeholder="選択..." />
@@ -157,10 +165,12 @@ export const WatermarkParamForm: React.FC<WatermarkParamFormProps> = ({
           <Label>透かし強度</Label>
           <RadioGroup
             value={String(settings.strength)}
-            onValueChange={value => handleValueChange('strength', Number(value))}
+            onValueChange={(value) =>
+              handleValueChange('strength', Number(value))
+            }
             className="flex space-x-2"
           >
-            {[1, 2, 3, 4, 5].map(val => (
+            {[1, 2, 3, 4, 5].map((val) => (
               <div key={val} className="flex items-center space-x-1">
                 <RadioGroupItem value={String(val)} id={`strength-${val}`} />
                 <Label htmlFor={`strength-${val}`}>{val}</Label>
@@ -172,7 +182,9 @@ export const WatermarkParamForm: React.FC<WatermarkParamFormProps> = ({
           <Label>ブロックサイズ</Label>
           <Select
             value={settings.blockSize}
-            onValueChange={(value: BlockSize) => handleValueChange('blockSize', value)}
+            onValueChange={(value: BlockSize) =>
+              handleValueChange('blockSize', value)
+            }
           >
             <SelectTrigger>
               <SelectValue placeholder="選択..." />
@@ -190,7 +202,9 @@ export const WatermarkParamForm: React.FC<WatermarkParamFormProps> = ({
             <Label>JPEG 品質 (%) - {settings.jpegQuality}</Label>
             <Slider
               value={[settings.jpegQuality || 90]}
-              onValueChange={([value]) => handleValueChange('jpegQuality', value)}
+              onValueChange={([value]) =>
+                handleValueChange('jpegQuality', value)
+              }
               min={1}
               max={100}
               step={1}
@@ -207,7 +221,10 @@ export const WatermarkParamForm: React.FC<WatermarkParamFormProps> = ({
             onClick={handleApplyClick}
             disabled={
               isApplyDisabled ||
-              (autoIncrement && images.some((_, index) => !isTextValid(`${baseText}_${index + 1}`)))
+              (autoIncrement &&
+                images.some(
+                  (_, index) => !isTextValid(`${baseText}_${index + 1}`)
+                ))
             }
           >
             Apply

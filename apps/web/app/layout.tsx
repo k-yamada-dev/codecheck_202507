@@ -44,7 +44,12 @@ export default async function RootLayout({
 
   return (
     <html lang={locale} dir={dir(locale)} suppressHydrationWarning>
-      <body className={cn('min-h-screen bg-background font-sans antialiased', fontSans.variable)}>
+      <body
+        className={cn(
+          'min-h-screen bg-background font-sans antialiased',
+          fontSans.variable
+        )}
+      >
         <ErrorBoundary>
           <Providers>
             <ClientProvider>

@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { RoleType } from '../enums/user';
 
 // User List Query Schema
 export const UserListQuerySchema = z.object({
@@ -10,7 +11,7 @@ export const UserListQuerySchema = z.object({
 // User Role Schema
 export const UserRoleSchema = z.object({
   userId: z.string().uuid(),
-  role: z.string(),
+  role: RoleType,
   assignedAt: z.string().datetime(),
   createdAt: z.string().datetime(),
   updatedAt: z.string().datetime(),
@@ -25,7 +26,7 @@ export const UserSchema = z.object({
   createdAt: z.string().datetime(),
   updatedAt: z.string().datetime(),
   userRoles: z.array(UserRoleSchema),
-  roles: z.array(z.string()),
+  roles: z.array(RoleType),
 });
 
 // User List Response Schema
@@ -38,7 +39,7 @@ export const UserListResponseSchema = z.object({
 export const UserCreateSchema = z.object({
   name: z.string().min(1, 'Name is required'),
   email: z.string().email('Valid email is required'),
-  roles: z.array(z.string()).min(1, 'At least one role is required'),
+  roles: z.array(RoleType).min(1, 'At least one role is required'),
 });
 
 // User Create Response Schema
@@ -48,7 +49,7 @@ export const UserCreateResponseSchema = UserSchema;
 export const UserUpdateSchema = z.object({
   name: z.string().min(1, 'Name is required'),
   email: z.string().email('Valid email is required'),
-  roles: z.array(z.string()).min(1, 'At least one role is required'),
+  roles: z.array(RoleType).min(1, 'At least one role is required'),
 });
 
 // User Update Response Schema

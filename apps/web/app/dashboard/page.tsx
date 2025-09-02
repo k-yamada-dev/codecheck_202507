@@ -16,14 +16,43 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
 
 const recentJobs = [
-  { id: 'JOB-001', type: 'Encode', status: 'Completed', createdAt: '2023-10-27 10:30' },
-  { id: 'JOB-002', type: 'Decode', status: 'In Progress', createdAt: '2023-10-27 10:35' },
-  { id: 'JOB-003', type: 'Encode', status: 'Failed', createdAt: '2023-10-27 10:40' },
-  { id: 'JOB-004', type: 'Encode', status: 'Completed', createdAt: '2023-10-26 18:20' },
-  { id: 'JOB-005', type: 'Decode', status: 'Completed', createdAt: '2023-10-26 15:10' },
+  {
+    id: 'JOB-001',
+    type: 'Encode',
+    status: 'Completed',
+    createdAt: '2023-10-27 10:30',
+  },
+  {
+    id: 'JOB-002',
+    type: 'Decode',
+    status: 'In Progress',
+    createdAt: '2023-10-27 10:35',
+  },
+  {
+    id: 'JOB-003',
+    type: 'Encode',
+    status: 'Failed',
+    createdAt: '2023-10-27 10:40',
+  },
+  {
+    id: 'JOB-004',
+    type: 'Encode',
+    status: 'Completed',
+    createdAt: '2023-10-26 18:20',
+  },
+  {
+    id: 'JOB-005',
+    type: 'Decode',
+    status: 'Completed',
+    createdAt: '2023-10-26 15:10',
+  },
 ];
 
 export default function DashboardPage() {
@@ -69,7 +98,8 @@ export default function DashboardPage() {
               className="w-full"
               onClick={() => handleNavigate('/image-management')}
             >
-              {t('dashboard.manageStorage')} <ArrowRight className="ml-2 h-4 w-4" />
+              {t('dashboard.manageStorage')}{' '}
+              <ArrowRight className="ml-2 h-4 w-4" />
             </Button>
           </CardContent>
         </Card>
@@ -101,7 +131,7 @@ export default function DashboardPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {recentJobs.slice(0, 3).map(job => (
+                {recentJobs.slice(0, 3).map((job) => (
                   <TableRow key={job.id}>
                     <TableCell className="font-medium">{job.id}</TableCell>
                     <TableCell>
@@ -127,7 +157,8 @@ export default function DashboardPage() {
               className="w-full mt-4"
               onClick={() => handleNavigate('/job')}
             >
-              {t('dashboard.viewAllJobs')} <ArrowRight className="ml-2 h-4 w-4" />
+              {t('dashboard.viewAllJobs')}{' '}
+              <ArrowRight className="ml-2 h-4 w-4" />
             </Button>
           </CardContent>
         </Card>

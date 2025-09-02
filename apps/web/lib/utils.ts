@@ -7,5 +7,7 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export function isValidLanguage(lang: unknown): lang is Language {
-  return typeof lang === 'string' && (languages as readonly string[]).includes(lang);
+  return (
+    typeof lang === 'string' && (languages as readonly string[]).includes(lang)
+  );
 }

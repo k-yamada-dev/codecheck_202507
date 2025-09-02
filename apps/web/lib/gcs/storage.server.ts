@@ -33,7 +33,10 @@ const bucket = storage.bucket(env.GCS_BUCKET_NAME);
  * @param ttl The time to live for the URL in seconds.
  * @returns The signed URL.
  */
-export async function getSignedUrl(filePath: string, ttl = Number(env.GCS_SIGNED_URL_TTL)) {
+export async function getSignedUrl(
+  filePath: string,
+  ttl = Number(env.GCS_SIGNED_URL_TTL)
+) {
   const [url] = await bucket.file(filePath).getSignedUrl({
     action: 'read',
     expires: Date.now() + ttl * 1000,
@@ -57,7 +60,10 @@ export async function downloadFile(fileName: string): Promise<string> {
 /* ────────────────────────────
    ローカルファイル or Buffer を GCS へアップロード
 ──────────────────────────── */
-export async function uploadFile(file: string | Buffer, destination: string): Promise<string> {
+export async function uploadFile(
+  file: string | Buffer,
+  destination: string
+): Promise<string> {
   const gcsFile = bucket.file(destination);
   const stream = gcsFile.createWriteStream({ resumable: false, public: true });
 
@@ -65,6 +71,10 @@ export async function uploadFile(file: string | Buffer, destination: string): Pr
     stream.on('error', reject);
     stream.on('finish', () => resolve(destination));
 
-    Buffer.isBuffer(file) ? stream.end(file) : fs.createReadStream(file).pipe(stream);
+    if (Buffer.isBuffer(file)) {
+      stream.end(file);
+    } else {
+      fs.createReadStream(file).pipe(stream);
+    }
   });
 }

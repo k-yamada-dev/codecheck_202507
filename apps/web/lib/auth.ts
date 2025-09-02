@@ -20,7 +20,9 @@ export const authOptions: NextAuthOptions = {
         }
 
         try {
-          const decodedToken = await firebaseAdmin.auth().verifyIdToken(credentials.idToken);
+          const decodedToken = await firebaseAdmin
+            .auth()
+            .verifyIdToken(credentials.idToken);
           const { uid, email, name } = decodedToken;
 
           // 1. 既存ユーザー（externalId=uid, provider='firebase'）を検索
@@ -42,7 +44,12 @@ export const authOptions: NextAuthOptions = {
                 email: email,
               },
             });
-            return { ...existingUser, id: existingUser.id };
+            return {
+              ...existingUser,
+              id: existingUser.id,
+              currentTenantId: (credentials as any)?.tenantId,
+              idToken: (credentials as any)?.idToken,
+            };
           }
 
           // 2. 招待スタブ（email一致, externalId=null）を検索
@@ -65,14 +72,22 @@ export const authOptions: NextAuthOptions = {
                 email: email,
               },
             });
-            return { ...updatedUser, id: updatedUser.id };
+            return {
+              ...updatedUser,
+              id: updatedUser.id,
+              currentTenantId: (credentials as any)?.tenantId,
+              idToken: (credentials as any)?.idToken,
+            };
           }
 
           // 3. どちらもなければ未招待ユーザーとしてエラー
           console.error('[authorize] No invited user found for email:', email);
           return null;
         } catch (error) {
-          console.error('[authorize] Firebase token verification or upsert failed:', error);
+          console.error(
+            '[authorize] Firebase token verification or upsert failed:',
+            error
+          );
           return null;
         }
       },
@@ -85,33 +100,102 @@ export const authOptions: NextAuthOptions = {
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
+        // debug log removed
+        // (auth.jwt) user present info removed in production
         token.sub = user.id;
-        token.tenantId = (user as { id: string; tenantId?: string }).tenantId;
+        // preserve idToken so future re-auth/signIn can reuse it
+        if ((user as any)?.idToken) {
+          token.idToken = (user as any).idToken;
+        }
+        // If the authorize returned a requested tenant, honor it and set on token so it will become current
+        const requestedTenant = (user as any)?.currentTenantId as
+          | string
+          | undefined;
+        if (requestedTenant) {
+          // debug log removed: honoring requestedTenant
+          token.tenantId = requestedTenant;
+        }
       }
-      if (token.sub && token.tenantId) {
+
+      if (token.sub) {
+        // get all userRoles for this user
         const userRoles = await prisma.userRole.findMany({
           where: {
             userId: token.sub,
-            tenantId: token.tenantId,
           },
           select: {
+            tenantId: true,
             role: true,
           },
         });
-        token.roles = userRoles.map(ur => ur.role as RoleType);
+
+        // map tenantId -> roles[]
+        const tenantsMap: Record<string, RoleType[]> = {};
+        userRoles.forEach((ur) => {
+          const t = ur.tenantId;
+          if (!tenantsMap[t]) tenantsMap[t] = [];
+          tenantsMap[t].push(ur.role as RoleType);
+        });
+
+        // fetch tenant metadata (name, tenantCode) for display
+        const tenantIds = Object.keys(tenantsMap);
+        const tenantsMeta =
+          tenantIds.length > 0
+            ? await prisma.tenant.findMany({
+                where: { id: { in: tenantIds } },
+                select: { id: true, name: true, tenantCode: true },
+              })
+            : [];
+
+        // token.tenants: array of { tenantId, tenantCode?, name?, roles }
+        token.tenants = tenantsMeta.map((t) => ({
+          tenantId: t.id,
+          tenantCode: t.tenantCode,
+          name: t.name,
+          roles: tenantsMap[t.id] || [],
+        }));
+
+        // determine current tenant: prioritize existing token.tenantId if it's still valid
+        const existingTenantId = token.tenantId as string | undefined;
+        if (existingTenantId && tenantsMap[existingTenantId]) {
+          token.tenantId = existingTenantId;
+        } else {
+          token.tenantId = tenantIds[0] ?? null;
+        }
+
+        // token.roles holds roles for current tenant
+        token.roles = token.tenantId ? tenantsMap[token.tenantId] || [] : [];
       }
+
       return token;
     },
     async session({ session, token }) {
       if (token.sub) {
         session.user.id = token.sub;
       }
+
+      if (token.tenants) {
+        session.user.tenants = token.tenants as {
+          tenantId: string;
+          tenantCode?: string;
+          name?: string;
+          roles: RoleType[];
+        }[];
+      }
+
       if (token.tenantId) {
         session.user.tenantId = token.tenantId as string;
       }
+
       if (token.roles) {
         session.user.roles = token.roles as RoleType[];
       }
+
+      // expose idToken to client session so frontend can re-authenticate (signIn) when switching tenant
+      if ((token as any).idToken) {
+        session.user.idToken = (token as any).idToken as string;
+      }
+
       return session;
     },
   },

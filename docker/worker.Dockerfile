@@ -1,7 +1,7 @@
 FROM node:18-slim
 
-# OpenSSLをインストール
-RUN apt-get update && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
+# OpenSSL と curl をインストール（curl は pubsub 健康チェックで使用）
+RUN apt-get update && apt-get install -y openssl curl ca-certificates && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /work
 
@@ -13,7 +13,6 @@ COPY pnpm-workspace.yaml ./
 COPY package.json ./
 COPY pnpm-lock.yaml ./
 COPY apps/worker/package.json ./worker/
-COPY patches ./patches
 # postinstallでprisma generateが実行されるため、スキーマファイルを先にコピー
 COPY packages/db/prisma ./packages/db/prisma
 # packages/db の package.json を先にコピーしてワークスペース認識させる
@@ -24,7 +23,7 @@ RUN pnpm install --frozen-lockfile
 
 # Prisma クライアントをワークスペースの DB パッケージで生成（型を確実に作る）
 # workspace のパッケージコンテキストで prisma を実行（パッケージ内の prisma/schema.prisma を使う）
-RUN pnpm -w --filter @acme/db exec prisma generate
+RUN pnpm --filter @acme/db exec -- prisma generate
 
 # アプリケーションの残りのファイルをコピー
 COPY . .

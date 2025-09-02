@@ -24,8 +24,14 @@ export const logsRepo = {
       data: {
         ...data,
         // Prisma's generated types for Json fields are sometimes strict;
-        // cast here to satisfy the expected InputJsonValue / Nullable types.
-        details: data.details as any,
+        // normalize undefined/null to Prisma-compatible values so the generated
+        // InputJsonValue / Nullable types are satisfied.
+        details:
+          data.details === undefined
+            ? undefined
+            : data.details === null
+              ? Prisma.JsonNull
+              : (data.details as Prisma.InputJsonValue),
       },
     });
   },
@@ -99,7 +105,12 @@ export const logsRepo = {
       where: { id },
       data: {
         ...data,
-        details: (data as any).details as any,
+        details:
+          data.details === undefined
+            ? undefined
+            : data.details === null
+              ? Prisma.JsonNull
+              : (data.details as Prisma.InputJsonValue),
       },
     });
   },

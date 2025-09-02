@@ -3,7 +3,10 @@ import i18next, { i18n as I18nInstance, Resource } from 'i18next';
 type Ns = readonly string[];
 const cache = new Map<string, Promise<I18nInstance>>();
 
-export async function getServerI18n(lng: string, ns: Ns = ['common']): Promise<I18nInstance> {
+export async function getServerI18n(
+  lng: string,
+  ns: Ns = ['common']
+): Promise<I18nInstance> {
   const key = `${lng}|${Array.from(ns).sort().join(',')}`;
   if (cache.has(key)) return cache.get(key)!;
 
@@ -14,7 +17,10 @@ export async function getServerI18n(lng: string, ns: Ns = ['common']): Promise<I
         /* webpackMode: "lazy-once" */
         `@/public/locales/${lng}/${n}.json`
       );
-      resources[lng] = { ...(resources[lng] ?? {}), [n]: mod.default[n] ?? mod.default };
+      resources[lng] = {
+        ...(resources[lng] ?? {}),
+        [n]: mod.default[n] ?? mod.default,
+      };
     }
 
     const i18n = i18next.createInstance();

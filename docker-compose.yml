@@ -51,6 +51,7 @@ services:
       - .:/work
       - node_modules_worker:/work/node_modules
     working_dir: /work
+    command: sh -c "until curl -s --max-time 1 \"http://pubsub:8085/\" >/dev/null 2>&1; do echo 'waiting for pubsub'; sleep 1; done; /work/scripts/init_pubsub_emulator.sh && pnpm -C /work install && pnpm -C /work/packages/db build && pnpm -C /work/packages/contracts build && pnpm -C /work/apps/worker build && pnpm -C /work/apps/worker start"
     environment:
       NODE_ENV: development
       CI: 'true'

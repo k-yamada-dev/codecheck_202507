@@ -190,10 +190,10 @@ export function ImageDataTable() {
                   <TableHead key={header.id}>
                     {header.isPlaceholder
                       ? null
-                      : flexRender(
+                      : (flexRender(
                           header.column.columnDef.header,
                           header.getContext()
-                        )}
+                        ) as React.ReactNode)}
                   </TableHead>
                 ))}
               </TableRow>
@@ -208,10 +208,12 @@ export function ImageDataTable() {
                 >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id}>
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext()
-                      )}
+                      {
+                        flexRender(
+                          cell.column.columnDef.cell,
+                          cell.getContext()
+                        ) as React.ReactNode
+                      }
                     </TableCell>
                   ))}
                 </TableRow>

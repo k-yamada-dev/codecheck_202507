@@ -49,16 +49,19 @@ export class Validator {
   public validatePassword(password: string): ValidationResult {
     return this.validate(password, [
       {
-        validate: (value: unknown): boolean => typeof value === 'string' && value.length >= 8,
+        validate: (value: unknown): boolean =>
+          typeof value === 'string' && value.length >= 8,
         message: '8文字以上で入力してください',
       },
       {
-        validate: (value: unknown): boolean => typeof value === 'string' && value.length <= 32,
+        validate: (value: unknown): boolean =>
+          typeof value === 'string' && value.length <= 32,
         message: '32文字以下で入力してください',
       },
       {
         validate: (value: unknown): boolean =>
-          typeof value === 'string' && /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[a-zA-Z\d]{8,}$/.test(value),
+          typeof value === 'string' &&
+          /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[a-zA-Z\d]{8,}$/.test(value),
         message: 'パスワードは大文字、小文字、数字を含む必要があります',
       },
     ]);

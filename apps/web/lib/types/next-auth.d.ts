@@ -6,6 +6,12 @@ declare module 'next-auth' {
     user: {
       tenantId?: string;
       roles?: RoleType[];
+      tenants?: {
+        tenantId: string;
+        tenantCode?: string | null;
+        name?: string | null;
+        roles?: RoleType[];
+      }[];
     } & DefaultSession['user'];
     idToken?: string;
     accessToken?: string;
@@ -16,6 +22,12 @@ declare module 'next-auth/jwt' {
   interface JWT {
     tenantId?: string;
     roles?: RoleType[];
+    tenants?: {
+      tenantId: string;
+      tenantCode?: string | null;
+      name?: string | null;
+      roles?: RoleType[];
+    }[];
     idToken?: string;
     accessToken?: string;
   }
