@@ -36,6 +36,9 @@ RUN echo "NEXTAUTH_SECRET=dummy-secret-for-build" > apps/web/.env.local && \
 
 RUN pnpm build
 
+# Prismaのインストール場所を確認
+RUN find . -name "@prisma"
+
 # ---------- runtime stage ----------
 FROM node:20-alpine AS runner
 WORKDIR /app
