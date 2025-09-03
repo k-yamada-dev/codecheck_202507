@@ -53,15 +53,8 @@ COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/packages/db/node_modules/@prisma ./node_modules/@prisma
 COPY --from=builder /app/packages/db/prisma/schema.prisma ./
 
-# 起動スクリプトを作成
-RUN echo '#!/bin/bash' > /app/start-worker.sh && \
-    echo 'set -e' >> /app/start-worker.sh && \
-    echo '# Cloud SQL Auth Proxy をバックグラウンドで起動' >> /app/start-worker.sh && \
-    echo '# --structured-logs オプションでログを JSON 形式で出力' >> /app/start-worker.sh && \
-    echo '/usr/local/bin/cloud-sql-proxy --structured-logs --port 5432 ${CLOUD_SQL_INSTANCE_CONNECTION_NAME} &' >> /app/start-worker.sh && \
-    echo '# アプリケーションを起動。execでプロセスを置き換え、シグナルを正しく受け取れるようにする' >> /app/start-worker.sh && \
-    echo 'exec node dist/index.js' >> /app/start-worker.sh && \
-    chmod +x /app/start-worker.sh
+# 起動スクリプトを作成（Cloud SQL の接続名が無ければ proxy は起動せず、dist の存在を検査して起動）
+RUN printf '%s\n' '#!/bin/bash' 'set -euo pipefail' '' 'if [ -n "${CLOUD_SQL_INSTANCE_CONNECTION_NAME:-}" ]; then' '  echo "Starting cloud-sql-proxy with $CLOUD_SQL_INSTANCE_CONNECTION_NAME"' '  /usr/local/bin/cloud-sql-proxy --structured-logs --port 5432 ${CLOUD_SQL_INSTANCE_CONNECTION_NAME} &' 'else' '  echo "CLOUD_SQL_INSTANCE_CONNECTION_NAME not set; skipping cloud-sql-proxy"' 'fi' '' 'echo "---- /app content ----"' 'ls -la /app || true' '' 'if [ -f /app/dist/index.js ]; then' '  echo "Starting worker: /app/dist/index.js"' '  exec node /app/dist/index.js' 'else' '  echo "Error: /app/dist/index.js not found."' '  echo "Listing /app for debugging:"' '  ls -la /app || true' '  exit 1' 'fi' > /app/start-worker.sh && chmod +x /app/start-worker.sh
 
 # Worker のエントリポイント
 CMD ["/app/start-worker.sh"]
