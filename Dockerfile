@@ -36,9 +36,6 @@ RUN echo "NEXTAUTH_SECRET=dummy-secret-for-build" > apps/web/.env.local && \
 
 RUN pnpm build
 
-# Prismaのインストール場所を確認
-RUN find . -name "@prisma"
-
 # ---------- runtime stage ----------
 FROM node:20-alpine AS runner
 WORKDIR /app
@@ -61,8 +58,10 @@ COPY --from=builder /app/apps/web/.next/standalone ./
 COPY --from=builder /app/apps/web/.next/static ./.next/static
 COPY --from=builder /app/apps/web/public ./public
 
-# Prisma のネイティブエンジンを同梱（重要）
-COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
+# Prisma のネイティブエンジンとスキーマファイルを同梱（重要）
+# pnpmのhoistingにより、@prismaはpackages/db配下にインストールされるため、そこからコピーする
+COPY --from=builder /app/packages/db/node_modules/@prisma ./node_modules/@prisma
+COPY --from=builder /app/packages/db/prisma/schema.prisma ./
 
 # 起動スクリプトを作成
 RUN echo '#!/bin/bash' > /app/start.sh && \
