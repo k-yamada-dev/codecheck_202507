@@ -36,6 +36,11 @@ RUN echo "NEXTAUTH_SECRET=dummy-secret-for-build" > apps/web/.env.local && \
 
 RUN pnpm build
 
+# ビルド成果物の「standalone」位置を標準化（複数パターンに対応）
+#  - Next の出力が /app/.next/standalone または /app/apps/web/.next/standalone のどちらかになる場合があるため、
+#    どちらか存在する方を /app/standalone にコピーしておく（runnerステージではここをコピーする）
+RUN sh -c 'if [ -d "/app/.next/standalone" ]; then cp -a /app/.next/standalone /app/standalone; elif [ -d "/app/apps/web/.next/standalone" ]; then cp -a /app/apps/web/.next/standalone /app/standalone; else echo "no standalone found"; fi'
+
 # ---------- runtime stage ----------
 FROM node:20-alpine AS runner
 WORKDIR /app
@@ -54,9 +59,10 @@ RUN apk add --no-cache libc6-compat curl bash && \
     chmod +x /usr/local/bin/cloud-sql-proxy
 
 # standalone サーバと静的ファイルを配置
-COPY --from=builder /app/apps/web/.next/standalone ./
-COPY --from=builder /app/apps/web/.next/static ./.next/static
-COPY --from=builder /app/apps/web/public ./public
+# standalone を runner 側の /app/.next/standalone に配置する（確実に server.js が /app/.next/standalone/server.js に存在するようにする）
+COPY --from=builder /app/apps/web/.next/standalone /app/.next/standalone
+COPY --from=builder /app/apps/web/.next/static /app/.next/static
+COPY --from=builder /app/apps/web/public /app/public
 
 # Prisma のネイティブエンジンとスキーマファイルを同梱（重要）
 # pnpmのhoistingにより、@prismaはpackages/db配下にインストールされるため、そこからコピーする
