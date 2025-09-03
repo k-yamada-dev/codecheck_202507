@@ -36,9 +36,6 @@ RUN echo "NEXTAUTH_SECRET=dummy-secret-for-build" > apps/web/.env.local && \
 
 RUN pnpm build
 
-# Standalone Outputの確認
-RUN ls -la apps/web/.next
-
 # ---------- runtime stage ----------
 FROM node:20-alpine AS runner
 WORKDIR /app
@@ -57,9 +54,9 @@ RUN apk add --no-cache libc6-compat curl bash && \
     chmod +x /usr/local/bin/cloud-sql-proxy
 
 # standalone サーバと静的ファイルを配置
-COPY --from=builder /app/.next/standalone ./
-COPY --from=builder /app/.next/static ./.next/static
-COPY --from=builder /app/public ./public
+COPY --from=builder /app/apps/web/.next/standalone ./
+COPY --from=builder /app/apps/web/.next/static ./.next/static
+COPY --from=builder /app/apps/web/public ./public
 
 # Prisma のネイティブエンジンを同梱（重要）
 COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
