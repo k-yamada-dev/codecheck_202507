@@ -36,6 +36,9 @@ RUN echo "NEXTAUTH_SECRET=dummy-secret-for-build" > apps/web/.env.local && \
 
 RUN pnpm build
 
+# デバッグ: builder ステージ内に存在する server.js を列挙（standalone の実際のエントリを確認）
+RUN find /app -type f -name "server.js" -print -exec ls -la {} \; || true
+
 # ビルド成果物の「standalone」位置を標準化（複数パターンに対応）
 #  - Next の出力が /app/.next/standalone または /app/apps/web/.next/standalone のどちらかになる場合があるため、
 #    どちらか存在する方を /app/standalone にコピーしておく（runnerステージではここをコピーする）
@@ -59,8 +62,10 @@ RUN apk add --no-cache libc6-compat curl bash && \
     chmod +x /usr/local/bin/cloud-sql-proxy
 
 # standalone サーバと静的ファイルを配置
-# standalone を runner 側の /app/.next/standalone に配置する（確実に server.js が /app/.next/standalone/server.js に存在するようにする）
-COPY --from=builder /app/apps/web/.next/standalone /app/.next/standalone
+# builder 側で /app/standalone に正しい standalone を生成しているので、それをルートへ展開する
+# これにより standalone 内の server.js が /app/server.js 相当に配置され、確実に起動できるようにする
+COPY --from=builder /app/standalone/. /app/
+# 静的アセットと public を配置
 COPY --from=builder /app/apps/web/.next/static /app/.next/static
 COPY --from=builder /app/apps/web/public /app/public
 
@@ -69,31 +74,33 @@ COPY --from=builder /app/apps/web/public /app/public
 COPY --from=builder /app/packages/db/node_modules/@prisma ./node_modules/@prisma
 COPY --from=builder /app/packages/db/prisma/schema.prisma ./
 
-# 起動スクリプトを作成（起動時に実行可能なエントリポイントを探索して起動）
+# 起動スクリプトを作成（standalone 配下を再帰的に検索して server.js を見つけて起動）
 RUN echo '#!/bin/bash' > /app/start.sh && \
-    echo 'set -e' >> /app/start.sh && \
+    echo 'set -euo pipefail' >> /app/start.sh && \
     echo '/usr/local/bin/cloud-sql-proxy --structured-logs --port 5432 ${CLOUD_SQL_INSTANCE_CONNECTION_NAME} &' >> /app/start.sh && \
     echo '' >> /app/start.sh && \
-    echo '# デバッグ情報（起動失敗時にログへ出力）' >> /app/start.sh && \
     echo 'echo "---- /app content ----"' >> /app/start.sh && \
     echo 'ls -la /app || true' >> /app/start.sh && \
-    echo 'echo "---- /app/.next/standalone content ----"' >> /app/start.sh && \
-    echo 'ls -la /app/.next/standalone || true' >> /app/start.sh && \
+    echo 'echo "---- /app/.next/standalone tree ----"' >> /app/start.sh && \
+    echo 'if [ -d /app/.next/standalone ]; then find /app/.next/standalone -maxdepth 3 -type f -name \"server.js\" -print -exec ls -la {} \\; || true; else echo "/app/.next/standalone not present"; fi' >> /app/start.sh && \
     echo '' >> /app/start.sh && \
-    echo '# エントリポイント候補を順に試す' >> /app/start.sh && \
-    echo 'if [ -f /app/server.js ]; then' >> /app/start.sh && \
-    echo '  exec node /app/server.js' >> /app/start.sh && \
-    echo 'elif [ -f /app/next-server.js ]; then' >> /app/start.sh && \
-    echo '  exec node /app/next-server.js' >> /app/start.sh && \
-    echo 'elif [ -f /app/main.js ]; then' >> /app/start.sh && \
-    echo '  exec node /app/main.js' >> /app/start.sh && \
-    echo 'elif [ -f /app/.next/standalone/server.js ]; then' >> /app/start.sh && \
-    echo '  exec node /app/.next/standalone/server.js' >> /app/start.sh && \
-    echo 'else' >> /app/start.sh && \
-    echo '  echo "No server entry found; listing /app for debugging:"' >> /app/start.sh && \
-    echo '  ls -la /app || true' >> /app/start.sh && \
-    echo '  exit 1' >> /app/start.sh && \
+    echo '# standalone 以下を再帰検索して最初に見つかった server.js を実行する' >> /app/start.sh && \
+    echo 'ENTRY=$(find /app -type f -name \"server.js\" -path \"*/.next/standalone/*\" -print -quit || true)' >> /app/start.sh && \
+    echo 'if [ -n \"$ENTRY\" ]; then' >> /app/start.sh && \
+    echo '  echo \"Starting server: $ENTRY\"' >> /app/start.sh && \
+    echo '  exec node \"$ENTRY\"' >> /app/start.sh && \
     echo 'fi' >> /app/start.sh && \
+    echo '' >> /app/start.sh && \
+    echo '# Fallback: app ルート直下の候補' >> /app/start.sh && \
+    echo 'for CAND in /app/server.js /app/next-server.js /app/main.js; do' >> /app/start.sh && \
+    echo '  if [ -f \"$CAND\" ]; then' >> /app/start.sh && \
+    echo '    echo \"Starting fallback server: $CAND\"' >> /app/start.sh && \
+    echo '    exec node \"$CAND\"' >> /app/start.sh && \
+    echo '  fi' >> /app/start.sh && \
+    echo 'done' >> /app/start.sh && \
+    echo 'echo \"No server entry found; listing /app for debugging:\"' >> /app/start.sh && \
+    echo 'ls -la /app || true' >> /app/start.sh && \
+    echo 'exit 1' >> /app/start.sh && \
     chmod +x /app/start.sh
 
 # Next の standalone のエントリ
