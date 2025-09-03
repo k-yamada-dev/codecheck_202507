@@ -75,33 +75,7 @@ COPY --from=builder /app/packages/db/node_modules/@prisma ./node_modules/@prisma
 COPY --from=builder /app/packages/db/prisma/schema.prisma ./
 
 # 起動スクリプトを作成（standalone 配下を再帰的に検索して server.js を見つけて起動）
-RUN echo '#!/bin/bash' > /app/start.sh && \
-    echo 'set -euo pipefail' >> /app/start.sh && \
-    echo '/usr/local/bin/cloud-sql-proxy --structured-logs --port 5432 ${CLOUD_SQL_INSTANCE_CONNECTION_NAME} &' >> /app/start.sh && \
-    echo '' >> /app/start.sh && \
-    echo 'echo "---- /app content ----"' >> /app/start.sh && \
-    echo 'ls -la /app || true' >> /app/start.sh && \
-    echo 'echo "---- /app/.next/standalone tree ----"' >> /app/start.sh && \
-    echo 'if [ -d /app/.next/standalone ]; then find /app/.next/standalone -maxdepth 3 -type f -name \"server.js\" -print -exec ls -la {} \\; || true; else echo "/app/.next/standalone not present"; fi' >> /app/start.sh && \
-    echo '' >> /app/start.sh && \
-    echo '# standalone 以下を再帰検索して最初に見つかった server.js を実行する' >> /app/start.sh && \
-    echo 'ENTRY=$(find /app -type f -name \"server.js\" -path \"*/.next/standalone/*\" -print -quit || true)' >> /app/start.sh && \
-    echo 'if [ -n \"$ENTRY\" ]; then' >> /app/start.sh && \
-    echo '  echo \"Starting server: $ENTRY\"' >> /app/start.sh && \
-    echo '  exec node \"$ENTRY\"' >> /app/start.sh && \
-    echo 'fi' >> /app/start.sh && \
-    echo '' >> /app/start.sh && \
-    echo '# Fallback: app ルート直下の候補' >> /app/start.sh && \
-    echo 'for CAND in /app/server.js /app/next-server.js /app/main.js; do' >> /app/start.sh && \
-    echo '  if [ -f \"$CAND\" ]; then' >> /app/start.sh && \
-    echo '    echo \"Starting fallback server: $CAND\"' >> /app/start.sh && \
-    echo '    exec node \"$CAND\"' >> /app/start.sh && \
-    echo '  fi' >> /app/start.sh && \
-    echo 'done' >> /app/start.sh && \
-    echo 'echo \"No server entry found; listing /app for debugging:\"' >> /app/start.sh && \
-    echo 'ls -la /app || true' >> /app/start.sh && \
-    echo 'exit 1' >> /app/start.sh && \
-    chmod +x /app/start.sh
+RUN printf '%s\n' '#!/bin/bash' 'set -euo pipefail' '/usr/local/bin/cloud-sql-proxy --structured-logs --port 5432 ${CLOUD_SQL_INSTANCE_CONNECTION_NAME} &' '' 'echo "---- /app content ----"' 'ls -la /app || true' '' 'echo "---- Searching for server.js under /app/.next/standalone ----"' 'if [ -d /app/.next/standalone ]; then' '  while IFS= read -r ENTRY; do' '    echo "Found: $ENTRY"' '    ls -la "$ENTRY" || true' '    echo "Starting server: $ENTRY"' '    exec node "$ENTRY"' '  done < <(find /app/.next/standalone -type f -name "server.js" -print)' 'fi' '' '# Fallback: app root candidates' 'for CAND in /app/server.js /app/next-server.js /app/main.js; do' '  if [ -f "$CAND" ]; then' '    echo "Starting fallback server: $CAND"' '    exec node "$CAND"' '  fi' 'done' '' 'echo "No server entry found; listing /app for debugging:"' 'ls -la /app || true' 'exit 1' > /app/start.sh && chmod +x /app/start.sh
 
 # Next の standalone のエントリ
 CMD ["/app/start.sh"]
