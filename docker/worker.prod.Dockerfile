@@ -18,6 +18,10 @@ COPY packages/db/prisma ./packages/db/prisma
 
 RUN pnpm install --frozen-lockfile
 
+# pnpm の hoisting により @prisma が packages/db/node_modules に配置される場合があるため
+# ビルドステージ内でルートの node_modules/@prisma を作成しておく（runner側の COPY を安定化）
+RUN if [ -d packages/db/node_modules/@prisma ]; then mkdir -p node_modules && cp -a packages/db/node_modules/@prisma node_modules/@prisma; fi
+
 # アプリ本体
 COPY . .
 
@@ -44,8 +48,10 @@ RUN apk add --no-cache libc6-compat curl bash && \
 COPY --from=builder /app/apps/worker/dist ./dist
 # 実行に必要な node_modules のみをコピー
 COPY --from=builder /app/node_modules ./node_modules
-# Prisma のネイティブエンジンを同梱（重要）
-COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
+# Prisma のネイティブエンジンとスキーマファイルを同梱（重要）
+# pnpmのhoistingにより、@prismaはpackages/db配下にインストールされるため、そこからコピーする
+COPY --from=builder /app/packages/db/node_modules/@prisma ./node_modules/@prisma
+COPY --from=builder /app/packages/db/prisma/schema.prisma ./
 
 # 起動スクリプトを作成
 RUN echo '#!/bin/bash' > /app/start-worker.sh && \
