@@ -74,8 +74,8 @@ COPY --from=builder /app/apps/web/public /app/public
 COPY --from=builder /app/packages/db/node_modules/@prisma ./node_modules/@prisma
 COPY --from=builder /app/packages/db/prisma/schema.prisma ./
 
-# 起動スクリプトを作成（standalone 配下を再帰的に検索して server.js を見つけて起動）
-RUN printf '%s\n' '#!/bin/bash' 'set -euo pipefail' '/usr/local/bin/cloud-sql-proxy --structured-logs --port 5432 ${CLOUD_SQL_INSTANCE_CONNECTION_NAME} &' '' 'echo "---- /app content ----"' 'ls -la /app || true' '' 'echo "---- Searching for server.js under /app/.next/standalone ----"' 'if [ -d /app/.next/standalone ]; then' '  while IFS= read -r ENTRY; do' '    echo "Found: $ENTRY"' '    ls -la "$ENTRY" || true' '    echo "Starting server: $ENTRY"' '    exec node "$ENTRY"' '  done < <(find /app/.next/standalone -type f -name "server.js" -print)' 'fi' '' '# Fallback: app root candidates' 'for CAND in /app/server.js /app/next-server.js /app/main.js; do' '  if [ -f "$CAND" ]; then' '    echo "Starting fallback server: $CAND"' '    exec node "$CAND"' '  fi' 'done' '' 'echo "No server entry found; listing /app for debugging:"' 'ls -la /app || true' 'exit 1' > /app/start.sh && chmod +x /app/start.sh
+# 起動スクリプトを作成（/app 以下を検索して最初の server.js を実行）
+RUN printf '%s\n' '#!/bin/bash' 'set -euo pipefail' '/usr/local/bin/cloud-sql-proxy --structured-logs --port 5432 ${CLOUD_SQL_INSTANCE_CONNECTION_NAME} &' '' 'echo "---- /app content ----"' 'ls -la /app || true' '' 'echo "---- Searching for first server.js under /app ----"' 'ENTRY=$(find /app -type f -name "server.js" -print -quit || true)' 'if [ -n "$ENTRY" ]; then' '  echo "Found server entry: $ENTRY"' '  ls -la "$ENTRY" || true' '  echo "Starting server: $ENTRY"' '  exec node "$ENTRY"' 'fi' '' '# Fallback: app root candidates' 'for CAND in /app/server.js /app/next-server.js /app/main.js; do' '  if [ -f "$CAND" ]; then' '    echo "Starting fallback server: $CAND"' '    exec node "$CAND"' '  fi' 'done' '' 'echo "No server entry found; listing /app for debugging:"' 'ls -la /app || true' 'exit 1' > /app/start.sh && chmod +x /app/start.sh
 
 # Next の standalone のエントリ
 CMD ["/app/start.sh"]
