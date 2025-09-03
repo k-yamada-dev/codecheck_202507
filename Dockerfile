@@ -63,14 +63,31 @@ COPY --from=builder /app/apps/web/public ./public
 COPY --from=builder /app/packages/db/node_modules/@prisma ./node_modules/@prisma
 COPY --from=builder /app/packages/db/prisma/schema.prisma ./
 
-# 起動スクリプトを作成
+# 起動スクリプトを作成（起動時に実行可能なエントリポイントを探索して起動）
 RUN echo '#!/bin/bash' > /app/start.sh && \
     echo 'set -e' >> /app/start.sh && \
-    echo '# Cloud SQL Auth Proxy をバックグラウンドで起動' >> /app/start.sh && \
-    echo '# --structured-logs オプションでログを JSON 形式で出力' >> /app/start.sh && \
     echo '/usr/local/bin/cloud-sql-proxy --structured-logs --port 5432 ${CLOUD_SQL_INSTANCE_CONNECTION_NAME} &' >> /app/start.sh && \
-    echo '# アプリケーションを起動。execでプロセスを置き換え、シグナルを正しく受け取れるようにする' >> /app/start.sh && \
-    echo 'exec node server.js' >> /app/start.sh && \
+    echo '' >> /app/start.sh && \
+    echo '# デバッグ情報（起動失敗時にログへ出力）' >> /app/start.sh && \
+    echo 'echo "---- /app content ----"' >> /app/start.sh && \
+    echo 'ls -la /app || true' >> /app/start.sh && \
+    echo 'echo "---- /app/.next/standalone content ----"' >> /app/start.sh && \
+    echo 'ls -la /app/.next/standalone || true' >> /app/start.sh && \
+    echo '' >> /app/start.sh && \
+    echo '# エントリポイント候補を順に試す' >> /app/start.sh && \
+    echo 'if [ -f /app/server.js ]; then' >> /app/start.sh && \
+    echo '  exec node /app/server.js' >> /app/start.sh && \
+    echo 'elif [ -f /app/next-server.js ]; then' >> /app/start.sh && \
+    echo '  exec node /app/next-server.js' >> /app/start.sh && \
+    echo 'elif [ -f /app/main.js ]; then' >> /app/start.sh && \
+    echo '  exec node /app/main.js' >> /app/start.sh && \
+    echo 'elif [ -f /app/.next/standalone/server.js ]; then' >> /app/start.sh && \
+    echo '  exec node /app/.next/standalone/server.js' >> /app/start.sh && \
+    echo 'else' >> /app/start.sh && \
+    echo '  echo "No server entry found; listing /app for debugging:"' >> /app/start.sh && \
+    echo '  ls -la /app || true' >> /app/start.sh && \
+    echo '  exit 1' >> /app/start.sh && \
+    echo 'fi' >> /app/start.sh && \
     chmod +x /app/start.sh
 
 # Next の standalone のエントリ
