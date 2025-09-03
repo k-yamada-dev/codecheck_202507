@@ -36,6 +36,9 @@ RUN echo "NEXTAUTH_SECRET=dummy-secret-for-build" > apps/web/.env.local && \
 
 RUN pnpm build
 
+# Standalone Outputの確認
+RUN ls -la apps/web/.next
+
 # ---------- runtime stage ----------
 FROM node:20-alpine AS runner
 WORKDIR /app
