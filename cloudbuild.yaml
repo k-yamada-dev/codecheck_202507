@@ -31,12 +31,18 @@ steps:
       - '--platform'
       - 'managed'
       - '--quiet'
+      - '--allow-unauthenticated'
       - '--add-cloudsql-instances=$_CLOUD_SQL_INSTANCE_CONNECTION_NAME'
-      # --- 必要に応じて以下のオプションを有効化してください ---
-      # - '--allow-unauthenticated' # 認証なしでアクセス許可
+      # --- 環境変数 / シークレットの自動注入（Cloud Build トリガーで置換変数を設定してください） ---
+      # 非機密（公開可）な値は --update-env-vars で渡します（置換変数をトリガーに設定）
+      - '--update-env-vars=NEXTAUTH_URL=$_NEXTAUTH_URL,GCS_BUCKET_NAME=$_GCS_BUCKET_NAME,NEXT_PUBLIC_FIREBASE_CONFIG=$_NEXT_PUBLIC_FIREBASE_CONFIG'
+      # 機密は Secret Manager を使い --set-secrets で注入します。トリガー側で _SECRET_* を設定してください。
+      # 例: _SECRET_FIREBASE_SA => projects/PROJECT_ID/secrets/FIREBASE_SA:latest
+      - '--set-secrets=NEXTAUTH_SECRET=$_SECRET_NEXTAUTH_SECRET,FIREBASE_SERVICE_ACCOUNT_JSON=$_SECRET_FIREBASE_SA,DATABASE_URL=$_SECRET_DATABASE_URL'
+      # --- 必要に応じて追加のオプション ---
       # - '--service-account=your-service-account@your-project.iam.gserviceaccount.com'
       # - '--update-env-vars=KEY1=VALUE1,KEY2=VALUE2'
-      # - '--set-secrets=SECRET_NAME=secret-name:latest'
+      # - '--set-secrets=OTHER=projects/PROJECT_ID/secrets/OTHER:latest'
 
   # -----------------------------------------------------------------------------
   # Build and Push Worker
