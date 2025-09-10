@@ -30,7 +30,6 @@ yarn-error.log*
 
 # env files
 .env*
-!apps/web/.env
 
 # vercel
 .vercel

@@ -2,6 +2,14 @@
 FROM node:20-alpine AS builder
 WORKDIR /app
 
+# ビルド時に受け取るARG（Cloud Build の --build-arg で注入）
+ARG NEXT_PUBLIC_FIREBASE_CONFIG
+ARG NEXTAUTH_SECRET
+ARG DATABASE_URL
+ARG FIREBASE_SERVICE_ACCOUNT_JSON
+ARG GCS_BUCKET_NAME
+ARG CLOUD_SQL_INSTANCE_CONNECTION_NAME
+
 # pnpm を有効化
 RUN corepack enable && corepack prepare pnpm@latest --activate
 
@@ -26,6 +34,14 @@ COPY . .
 RUN pnpm --filter @acme/db exec prisma generate
 
 # Next.js アプリケーションをビルド
+# ビルド時に渡された ARG を ENV に設定して next build で利用できるようにする
+ENV NEXT_PUBLIC_FIREBASE_CONFIG=$NEXT_PUBLIC_FIREBASE_CONFIG
+ENV NEXTAUTH_SECRET=$NEXTAUTH_SECRET
+ENV DATABASE_URL=$DATABASE_URL
+ENV FIREBASE_SERVICE_ACCOUNT_JSON=$FIREBASE_SERVICE_ACCOUNT_JSON
+ENV GCS_BUCKET_NAME=$GCS_BUCKET_NAME
+ENV CLOUD_SQL_INSTANCE_CONNECTION_NAME=$CLOUD_SQL_INSTANCE_CONNECTION_NAME
+
 RUN pnpm --filter web build
 
 # standaloneビルドの成果物にQuery Engineを手動でコピー
