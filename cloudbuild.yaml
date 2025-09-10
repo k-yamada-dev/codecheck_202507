@@ -119,15 +119,16 @@ options:
 # このビルドで利用するシークレットを宣言する
 availableSecrets:
   secretManager:
+    # versionName の末尾に /versions/latest を追加
     # NEXT_PUBLIC_FIREBASE_CONFIG
-    - versionName: $_NEXT_PUBLIC_FIREBASE_CONFIG
+    - versionName: ${_NEXT_PUBLIC_FIREBASE_CONFIG}/versions/latest
       env: 'NEXT_PUBLIC_FIREBASE_CONFIG'
     # NEXTAUTH_SECRET
-    - versionName: $_SECRET_NEXTAUTH_SECRET
+    - versionName: ${_SECRET_NEXTAUTH_SECRET}/versions/latest
       env: 'NEXTAUTH_SECRET'
     # DATABASE_URL
-    - versionName: $_SECRET_DATABASE_URL
+    - versionName: ${_SECRET_DATABASE_URL}/versions/latest
       env: 'DATABASE_URL'
     # FIREBASE_SERVICE_ACCOUNT_JSON
-    - versionName: $_SECRET_FIREBASE_SA
+    - versionName: ${_SECRET_FIREBASE_SA}/versions/latest
       env: 'FIREBASE_SERVICE_ACCOUNT_JSON'
