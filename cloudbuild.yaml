@@ -8,8 +8,12 @@ steps:
     entrypoint: 'bash'
     args:
       - '-c'
-      # 実行前に変数が空でないかチェックし、エラーメッセージを明確にする
+      # デバッグのため、受け取った変数の値をログに出力する
       - |
+        echo "--- DEBUG: Checking substitution variable ---"
+        echo "Value of _SECRET_FIREBASE_SA: '$$_SECRET_FIREBASE_SA'"
+        echo "--- END DEBUG ---"
+
         if [ -z "$$_SECRET_FIREBASE_SA" ]; then
           echo "ERROR: The substitution variable '_SECRET_FIREBASE_SA' is not set."
           echo "Please check the Cloud Build trigger configuration."
