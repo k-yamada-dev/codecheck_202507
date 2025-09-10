@@ -25,16 +25,6 @@ COPY . .
 # Prisma クライアントを生成
 RUN pnpm --filter @acme/db exec prisma generate
 
-# Next.js のビルドに必要な環境変数を設定
-# 実行時にはCloud Runから実際の値が渡されるため、ビルドを通過させるためのダミー値を設定する
-RUN echo "GCS_BUCKET_NAME=dummy-bucket-for-build" > apps/web/.env && \
-    echo "DATABASE_URL=postgresql://user:pass@host:port/db?schema=public" >> apps/web/.env && \
-    echo "NEXTAUTH_SECRET=dummy-secret-for-build" >> apps/web/.env && \
-    echo "NEXTAUTH_URL=http://localhost:3000" >> apps/web/.env && \
-    echo "CLOUD_SQL_INSTANCE_CONNECTION_NAME=dummy:connection:string" >> apps/web/.env && \
-    echo "FIREBASE_SERVICE_ACCOUNT_JSON={}" >> apps/web/.env && \
-    echo 'NEXT_PUBLIC_FIREBASE_CONFIG={"apiKey":"dummy","authDomain":"dummy.firebaseapp.com","projectId":"dummy","storageBucket":"dummy.appspot.com","messagingSenderId":"dummy","appId":"dummy"}' >> apps/web/.env
-
 # Next.js アプリケーションをビルド
 RUN pnpm --filter web build
 
