@@ -67,24 +67,24 @@ steps:
     args:
       - '-c'
       - |
-        # --- --set-secretsフラグ用の引数を動的に作成 ---
+        # --- --set-secretsフラグ用の引数を動的に作成 (変数をすべて小文字に変更) ---
         # basenameコマンドで、完全パスの変数からシークレットの短い名前だけを抽出
-        NEXTAUTH_SECRET_NAME=$(basename "${_SECRET_NEXTAUTH_SECRET}")
-        GCS_BUCKET_NAME_NAME=$(basename "${_GCS_BUCKET_NAME}")
-        FIREBASE_SA_NAME=$(basename "${_SECRET_FIREBASE_SA}")
-        FIREBASE_CONFIG_NAME=$(basename "${_NEXT_PUBLIC_FIREBASE_CONFIG}")
-        DATABASE_URL_NAME=$(basename "${_SECRET_DATABASE_URL}")
+        nextauth_secret_name=$(basename "${_SECRET_NEXTAUTH_SECRET}")
+        gcs_bucket_name_name=$(basename "${_GCS_BUCKET_NAME}")
+        firebase_sa_name=$(basename "${_SECRET_FIREBASE_SA}")
+        firebase_config_name=$(basename "${_NEXT_PUBLIC_FIREBASE_CONFIG}")
+        database_url_name=$(basename "${_SECRET_DATABASE_URL}")
 
         # 正しいフォーマット(KEY=SECRET_NAME:latest)で文字列を組み立てる
-        SECRETS_ARG="NEXTAUTH_SECRET=${NEXTAUTH_SECRET_NAME}:latest"
-        SECRETS_ARG+=",GCS_BUCKET_NAME=${GCS_BUCKET_NAME_NAME}:latest"
-        SECRETS_ARG+=",FIREBASE_SERVICE_ACCOUNT_JSON=${FIREBASE_SA_NAME}:latest"
-        SECRETS_ARG+=",NEXT_PUBLIC_FIREBASE_CONFIG=${FIREBASE_CONFIG_NAME}:latest"
-        SECRETS_ARG+=",DATABASE_URL=${DATABASE_URL_NAME}:latest"
+        secrets_arg="NEXTAUTH_SECRET=${nextauth_secret_name}:latest"
+        secrets_arg+=",GCS_BUCKET_NAME=${gcs_bucket_name_name}:latest"
+        secrets_arg+=",FIREBASE_SERVICE_ACCOUNT_JSON=${firebase_sa_name}:latest"
+        secrets_arg+=",NEXT_PUBLIC_FIREBASE_CONFIG=${firebase_config_name}:latest"
+        secrets_arg+=",DATABASE_URL=${database_url_name}:latest"
 
         # NEXTAUTH_URLはシークレットではないので、--update-env-varsで渡す
-        ENV_VARS_ARG="CLOUD_SQL_INSTANCE_CONNECTION_NAME=${_CLOUD_SQL_INSTANCE_CONNECTION_NAME}"
-        ENV_VARS_ARG+=",NEXTAUTH_URL=${_NEXTAUTH_URL}"
+        env_vars_arg="CLOUD_SQL_INSTANCE_CONNECTION_NAME=${_CLOUD_SQL_INSTANCE_CONNECTION_NAME}"
+        env_vars_arg+=",NEXTAUTH_URL=${_NEXTAUTH_URL}"
 
         # --- gcloud run deploy を実行 ---
         gcloud run deploy "$_SERVICE_NAME_WEB" \
@@ -94,8 +94,8 @@ steps:
           --quiet \
           --allow-unauthenticated \
           --add-cloudsql-instances="$_CLOUD_SQL_INSTANCE_CONNECTION_NAME" \
-          --update-env-vars="$ENV_VARS_ARG" \
-          --set-secrets="$SECRETS_ARG"
+          --update-env-vars="$env_vars_arg" \
+          --set-secrets="$secrets_arg"
 
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
     id: 'Make Web Public'
