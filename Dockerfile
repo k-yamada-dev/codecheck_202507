@@ -27,6 +27,20 @@ COPY . .
 # Prisma クライアントを生成
 RUN pnpm --filter @acme/db exec prisma generate
 
+# ------------------------------------------------------------------
+# ▼▼▼▼▼ デバッグステップ（任意） ▼▼▼▼▼
+# pnpm build を実行する前に、.envファイルが存在し、
+# 中身が正しいかを確認するためにログに出力する
+# ------------------------------------------------------------------
+RUN echo "--- Listing files in /app/apps/web ---" && \
+    ls -la /app/apps/web && \
+    echo "--- Content of /app/apps/web/.env ---" && \
+    cat /app/apps/web/.env && \
+    echo "--- End of debug output ---"
+# ▲▲▲▲▲ デバッグステップ（任意） ▲▲▲▲▲
+# ------------------------------------------------------------------
+
+
 # Next.js アプリケーションをビルド
 RUN pnpm --filter web build
 

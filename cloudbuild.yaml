@@ -19,18 +19,19 @@ steps:
         # 2. Next.jsのビルド用の.envファイルを準備
         echo "Creating .env file for the build..."
 
-        # ビルドに必要なシークレットを取得し、tr -d '\n' で末尾の改行を削除する
-        firebase_config_value=$(gcloud secrets versions access "${_NEXT_PUBLIC_FIREBASE_CONFIG}/versions/latest" | tr -d '\n')
-        nextauth_value=$(gcloud secrets versions access "${_SECRET_NEXTAUTH_SECRET}/versions/latest" | tr -d '\n')
-        db_url_value=$(gcloud secrets versions access "${_SECRET_DATABASE_URL}/versions/latest" | tr -d '\n')
-        gcs_bucket_name_value=$(gcloud secrets versions access "${_GCS_BUCKET_NAME}/versions/latest" | tr -d '\n')
+        # ビルドに必要なシークレットを取得し、tr -d '\r\n' で改行と復帰コードを完全に削除
+        firebase_config_value=$(gcloud secrets versions access "${_NEXT_PUBLIC_FIREBASE_CONFIG}/versions/latest" | tr -d '\r\n')
+        nextauth_value=$(gcloud secrets versions access "${_SECRET_NEXTAUTH_SECRET}/versions/latest" | tr -d '\r\n')
+        db_url_value=$(gcloud secrets versions access "${_SECRET_DATABASE_URL}/versions/latest" | tr -d '\r\n')
+        gcs_bucket_name_value=$(gcloud secrets versions access "${_GCS_BUCKET_NAME}/versions/latest" | tr -d '\r\n')
 
         # .envファイルを作成するディレクトリを apps/web/ に変更
         mkdir -p apps/web
 
         # here-documentを使って正しい場所に.envファイルを生成
+        # JSON値のクォートは削除し、他の値はダブルクォートで囲む
         cat <<EOT > apps/web/.env
-        NEXT_PUBLIC_FIREBASE_CONFIG="${firebase_config_value}"
+        NEXT_PUBLIC_FIREBASE_CONFIG=${firebase_config_value}
         NEXTAUTH_SECRET="${nextauth_value}"
         DATABASE_URL="${db_url_value}"
         GCS_BUCKET_NAME="${gcs_bucket_name_value}"
@@ -38,7 +39,10 @@ steps:
         EOT
 
         echo "--- .env file created successfully in apps/web/ ---"
-        cat apps/web/.env
+        echo "--- Raw .env content (DEBUG) ---"
+        # cat -A コマンドで非表示文字を含めてファイルの内容を出力する
+        cat -A apps/web/.env
+        echo "--- End Raw .env content ---"
 
   - name: 'gcr.io/cloud-builders/docker'
     id: 'Build Web'
