@@ -19,17 +19,18 @@ steps:
         # 2. Next.jsのビルド用の.envファイルを準備
         echo "Creating .env file for the build..."
 
-        # ビルドに必要なシークレットを取得 (変数を全て小文字に変更して衝突を回避)
+        # ビルドに必要なシークレットを取得 (GCS_BUCKET_NAMEもシークレットから取得するよう修正)
         firebase_config_value=$(gcloud secrets versions access "${_NEXT_PUBLIC_FIREBASE_CONFIG}/versions/latest")
         nextauth_value=$(gcloud secrets versions access "${_SECRET_NEXTAUTH_SECRET}/versions/latest")
         db_url_value=$(gcloud secrets versions access "${_SECRET_DATABASE_URL}/versions/latest")
+        gcs_bucket_name_value=$(gcloud secrets versions access "${_GCS_BUCKET_NAME}/versions/latest")
 
         # here-documentを使って.envファイルを生成 (''で囲むことでJSONを安全に扱える)
         cat <<EOT > .env
         NEXT_PUBLIC_FIREBASE_CONFIG='${firebase_config_value}'
         NEXTAUTH_SECRET='${nextauth_value}'
         DATABASE_URL='${db_url_value}'
-        GCS_BUCKET_NAME=${_GCS_BUCKET_NAME}
+        GCS_BUCKET_NAME=${gcs_bucket_name_value}
         CLOUD_SQL_INSTANCE_CONNECTION_NAME=${_CLOUD_SQL_INSTANCE_CONNECTION_NAME}
         EOT
 
