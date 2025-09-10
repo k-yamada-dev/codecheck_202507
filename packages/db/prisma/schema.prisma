@@ -7,6 +7,7 @@
 generator client {
   provider        = "prisma-client-js"
   previewFeatures = ["postgresqlExtensions"]
+  binaryTargets   = ["native", "linux-musl-openssl-3.0.x"]
 }
 
 datasource db {
@@ -60,7 +61,7 @@ model User {
   name       String
   email      String
   tenantCode String? @map("tenant_code")
-  userCode   String? @map("user_code")
+  userCode   String  @unique @map("user_code")
 
   tenant    Tenant?    @relation(fields: [tenantId], references: [id])
   jobs      Job[]

@@ -1,5 +1,6 @@
 import { Prisma, User } from '@prisma/client';
 import { prisma } from '../client';
+import { generateUniqueUserCode } from '../utils/codes';
 export type UserRow = User;
 
 // ユーザーとその userRoles を含むペイロード型（prisma の include を反映）
@@ -13,7 +14,7 @@ export type CreateUserData = {
   name: string;
   email: string;
   tenantCode?: string | null;
-  userCode?: string | null;
+  userCode?: string;
 };
 
 // Data for updating a user
@@ -21,15 +22,29 @@ export type UpdateUserData = Partial<{
   name: string;
   email: string;
   tenantCode: string | null;
-  userCode: string | null;
+  userCode: string;
   isDeleted: boolean;
   deletedAt: Date | null;
 }>;
 
 export const usersRepo = {
-  create: (data: CreateUserData) => {
+  create: async (data: CreateUserData) => {
+    // Ensure userCode is assigned according to rules if not provided
+    const userCode = data.userCode ?? (await generateUniqueUserCode());
+
+    // Use unchecked create input so we can provide tenantId directly
+    const payload: Prisma.UserUncheckedCreateInput = {
+      tenantId: data.tenantId ?? undefined,
+      provider: data.provider,
+      externalId: data.externalId,
+      name: data.name,
+      email: data.email,
+      tenantCode: data.tenantCode ?? undefined,
+      userCode,
+    };
+
     return prisma.user.create({
-      data,
+      data: payload,
     });
   },
 

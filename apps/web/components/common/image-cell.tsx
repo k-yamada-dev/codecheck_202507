@@ -21,8 +21,11 @@ export function ImageCell({ path, alt, thumb, onClick, className }: Props) {
     refetch,
   } = useQuery({
     queryKey: ['imageUrl', path],
-    queryFn: () =>
-      path ? getSignedUrl(path, { expiresInSec: 300 }) : Promise.resolve(null),
+    queryFn: () => {
+      if (!path) return Promise.resolve(null);
+      if (path.startsWith('http')) return Promise.resolve(path);
+      return getSignedUrl(path, { expiresInSec: 300 });
+    },
     enabled: !!path,
     staleTime: 1000 * 60 * 25,
     retry: 1,

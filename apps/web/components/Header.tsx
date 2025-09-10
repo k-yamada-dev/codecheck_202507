@@ -18,6 +18,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { getIdToken } from 'firebase/auth';
 import { auth as firebaseAuth } from '@/lib/firebase';
 import { navItems } from '@/config/navigation';
+import { ThemeToggle } from '@/components/ui/ThemeToggle';
 import type { RoleType } from '@acme/contracts';
 
 export default function Header() {
@@ -120,97 +121,106 @@ export default function Header() {
           <h1 className="text-lg font-semibold">{pageTitle}</h1>
         </div>
 
-        {status === 'authenticated' && (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="relative h-8 w-8 rounded-full">
-                <User className="h-5 w-5" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-56" align="end" forceMount>
-              <DropdownMenuLabel className="font-normal">
-                <div className="flex flex-col space-y-1">
-                  <p className="text-sm font-medium leading-none">
-                    {t('header.signedInAs')}
-                  </p>
-                  <p className="text-xs leading-none text-muted-foreground">
-                    {session?.user?.email}
-                  </p>
-                </div>
-              </DropdownMenuLabel>
-
-              {/* Tenant switcher */}
-              {session?.user?.tenants && session.user.tenants.length > 0 && (
-                <>
-                  {/* Current tenant label for clear visibility */}
-                  <div className="px-3 pb-2">
-                    {(() => {
-                      const current =
-                        session?.user?.tenants?.find(
-                          (x: {
-                            tenantId: string;
-                            tenantCode?: string | null;
-                            name?: string | null;
-                            roles?: RoleType[];
-                          }) => x.tenantId === session?.user?.tenantId
-                        ) ?? null;
-                      if (!current) return null;
-                      return (
-                        <div className="text-sm font-medium">
-                          {t('header.current')}:{' '}
-                          {current.name ??
-                            current.tenantCode ??
-                            current.tenantId}
-                        </div>
-                      );
-                    })()}
-                  </div>
-
-                  <DropdownMenuSeparator />
-                  <DropdownMenuLabel className="font-normal">
-                    <p className="text-xs leading-none text-muted-foreground">
-                      {t('header.currentTenant')}
+        <div className="flex items-center space-x-2">
+          <ThemeToggle />
+          {status === 'authenticated' && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  className="relative h-8 w-8 rounded-full"
+                >
+                  <User className="h-5 w-5" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-56" align="end" forceMount>
+                <DropdownMenuLabel className="font-normal">
+                  <div className="flex flex-col space-y-1">
+                    <p className="text-sm font-medium leading-none">
+                      {t('header.signedInAs')}
                     </p>
-                  </DropdownMenuLabel>
-                  {session.user.tenants.map(
-                    (tnt: {
-                      tenantId: string;
-                      tenantCode?: string;
-                      name?: string;
-                    }) => {
-                      const isCurrent =
-                        session?.user?.tenantId === tnt.tenantId;
-                      return (
-                        <DropdownMenuItem
-                          key={tnt.tenantId}
-                          onClick={() => handleTenantSwitch(tnt.tenantId)}
-                          className="flex items-center justify-between"
-                        >
-                          <span
-                            className={
-                              isCurrent ? 'font-semibold truncate' : 'truncate'
-                            }
-                          >
-                            {tnt.name ?? tnt.tenantCode ?? tnt.tenantId}
-                          </span>
-                          {isCurrent && (
-                            <Check className="ml-2 h-4 w-4 text-primary" />
-                          )}
-                        </DropdownMenuItem>
-                      );
-                    }
-                  )}
-                </>
-              )}
+                    <p className="text-xs leading-none text-muted-foreground">
+                      {session?.user?.email}
+                    </p>
+                  </div>
+                </DropdownMenuLabel>
 
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={handleLogout}>
-                <LogOut className="mr-2 h-4 w-4" />
-                <span>{t('header.logout')}</span>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        )}
+                {/* Tenant switcher */}
+                {session?.user?.tenants &&
+                  session.user.tenants.length > 0 && (
+                    <>
+                      {/* Current tenant label for clear visibility */}
+                      <div className="px-3 pb-2">
+                        {(() => {
+                          const current =
+                            session?.user?.tenants?.find(
+                              (x: {
+                                tenantId: string;
+                                tenantCode?: string | null;
+                                name?: string | null;
+                                roles?: RoleType[];
+                              }) => x.tenantId === session?.user?.tenantId
+                            ) ?? null;
+                          if (!current) return null;
+                          return (
+                            <div className="text-sm font-medium">
+                              {t('header.current')}:{' '}
+                              {current.name ??
+                                current.tenantCode ??
+                                current.tenantId}
+                            </div>
+                          );
+                        })()}
+                      </div>
+
+                      <DropdownMenuSeparator />
+                      <DropdownMenuLabel className="font-normal">
+                        <p className="text-xs leading-none text-muted-foreground">
+                          {t('header.currentTenant')}
+                        </p>
+                      </DropdownMenuLabel>
+                      {session.user.tenants.map(
+                        (tnt: {
+                          tenantId: string;
+                          tenantCode?: string;
+                          name?: string;
+                        }) => {
+                          const isCurrent =
+                            session?.user?.tenantId === tnt.tenantId;
+                          return (
+                            <DropdownMenuItem
+                              key={tnt.tenantId}
+                              onClick={() => handleTenantSwitch(tnt.tenantId)}
+                              className="flex items-center justify-between"
+                            >
+                              <span
+                                className={
+                                  isCurrent
+                                    ? 'font-semibold truncate'
+                                    : 'truncate'
+                                }
+                              >
+                                {tnt.name ?? tnt.tenantCode ?? tnt.tenantId}
+                              </span>
+                              {isCurrent && (
+                                <Check className="ml-2 h-4 w-4 text-primary" />
+                              )}
+                            </DropdownMenuItem>
+                          );
+                        }
+                      )}
+                    </>
+                  )}
+
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleLogout}>
+                  <LogOut className="mr-2 h-4 w-4" />
+                  <span>{t('header.logout')}</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+        </div>
       </div>
     </header>
   );

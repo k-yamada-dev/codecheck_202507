@@ -2,7 +2,11 @@ import { createRouteHandler } from '@/lib/ts-rest/next-handler';
 import { contract, USER_ROLE } from '@acme/contracts';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
-import { prisma } from '@acme/db';
+import {
+  prisma,
+  generateUniqueTenantCode,
+  isUniqueConstraintError,
+} from '@acme/db';
 import type { Tenant, TransactionClient } from '@acme/db';
 import type { CreateTenantRequest } from '@acme/contracts';
 import { firebaseAdmin } from '@/lib/firebaseAdmin';
@@ -81,66 +85,89 @@ const router = createRouteHandler(contract.admin, {
 
       const { name, adminEmail, tenantCode } = body;
 
-      // Generate tenantCode if not provided
-      const finalTenantCode =
-        tenantCode ||
-        name.toLowerCase().replace(/\s/g, '').slice(0, 8) +
-          Math.random().toString(36).slice(2, 6);
+      // If tenantCode provided by client, try a single create using it.
+      let newTenant;
+      const createWithTx = async (tx: TransactionClient, tcode: string) => {
+        const tenant = await tx.tenant.create({
+          data: {
+            name,
+            tenantCode: tcode,
+          },
+        });
 
-      // Prisma transaction to create tenant and admin user together
-      const newTenant = await prisma.$transaction(
-        async (tx: TransactionClient) => {
-          const tenant = await tx.tenant.create({
-            data: {
-              name,
-              tenantCode: finalTenantCode,
-            },
-          });
-
-          // 既存Firebaseユーザーがいないか確認（存在する場合はそのまま流用する）
-          let firebaseUser;
-          try {
-            firebaseUser = await firebaseAdmin
-              .auth()
-              .getUserByEmail(adminEmail);
-            // 既に存在するFirebaseユーザーがいる場合は、そのまま続行して外部IDを利用します。
-          } catch (e) {
-            const error = e as { code?: string; message?: string };
-            if (error.code === 'auth/user-not-found') {
-              // 存在しなければ新規作成
-              firebaseUser = await firebaseAdmin.auth().createUser({
-                email: adminEmail,
-                emailVerified: false,
-                displayName: 'Tenant Admin',
-                disabled: false,
-              });
-            } else {
-              // その他のFirebaseエラーはそのまま上位へ伝搬
-              throw e;
-            }
+        // 既存Firebaseユーザーがいないか確認（存在する場合はそのまま流用する）
+        let firebaseUser;
+        try {
+          firebaseUser = await firebaseAdmin.auth().getUserByEmail(adminEmail);
+        } catch (e) {
+          const error = e as { code?: string; message?: string };
+          if (error.code === 'auth/user-not-found') {
+            firebaseUser = await firebaseAdmin.auth().createUser({
+              email: adminEmail,
+              emailVerified: false,
+              displayName: 'Tenant Admin',
+              disabled: false,
+            });
+          } else {
+            throw e;
           }
-
-          // 共通サービスでユーザー作成
-          const { createUser, sendPasswordResetMail } = await import(
-            '@/lib/userService'
-          );
-          const dbUser = await createUser({
-            prisma: tx,
-            tenantId: tenant.id,
-            email: adminEmail,
-            name: 'Tenant Admin',
-            externalId: firebaseUser.uid,
-            provider: 'firebase',
-            roles: [USER_ROLE.TENANT_ADMIN],
-          });
-
-          if (dbUser) {
-            await sendPasswordResetMail(adminEmail);
-          }
-
-          return tenant;
         }
-      );
+
+        // 共通サービスでユーザー作成
+        const { createUser, sendPasswordResetMail } = await import(
+          '@/lib/userService'
+        );
+        const dbUser = await createUser({
+          prisma: tx,
+          tenantId: tenant.id,
+          email: adminEmail,
+          name: 'Tenant Admin',
+          externalId: firebaseUser.uid,
+          provider: 'firebase',
+          roles: [USER_ROLE.TENANT_ADMIN],
+        });
+
+        if (dbUser) {
+          await sendPasswordResetMail(adminEmail);
+        }
+
+        return tenant;
+      };
+
+      if (tenantCode) {
+        // client provided a tenantCode — use it directly
+        newTenant = await prisma.$transaction(async (tx: TransactionClient) => {
+          return await createWithTx(tx, tenantCode);
+        });
+      } else {
+        // Server-generate tenantCode with retries on unique-constraint failures
+        const maxAttempts = 5;
+        let lastError: unknown = null;
+        for (let attempt = 0; attempt < maxAttempts; attempt++) {
+          const generated = await generateUniqueTenantCode();
+          try {
+            newTenant = await prisma.$transaction(
+              async (tx: TransactionClient) => {
+                return await createWithTx(tx, generated);
+              }
+            );
+            break; // success
+          } catch (e) {
+            lastError = e;
+            // Prisma unique constraint (P2002) -> retry
+            if (isUniqueConstraintError(e)) {
+              // conflict, retry with new code
+              continue;
+            }
+            // other error -> rethrow
+            throw e;
+          }
+        }
+        if (!newTenant) {
+          console.error('Failed to create tenant after retries', lastError);
+          throw lastError;
+        }
+      }
 
       return {
         status: 201,

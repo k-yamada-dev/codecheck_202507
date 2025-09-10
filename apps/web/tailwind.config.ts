@@ -34,6 +34,10 @@ const config: Config = {
           900: 'hsl(var(--primary-900))',
           950: 'hsl(var(--primary-950))',
         },
+        sidebar: {
+          DEFAULT: 'hsl(var(--sidebar))',
+          foreground: 'hsl(var(--sidebar-foreground))',
+        },
         secondary: {
           DEFAULT: 'hsl(var(--secondary))',
           foreground: 'hsl(var(--secondary-foreground))',

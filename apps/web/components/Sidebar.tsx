@@ -15,6 +15,7 @@ import {
 } from '@/components/ui/tooltip';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { ChevronLeft, Menu } from 'lucide-react';
+import Image from "next/image";
 
 export default function Sidebar() {
   const router = useRouter();
@@ -31,14 +32,14 @@ export default function Sidebar() {
 
   if (status === 'loading') {
     // You can return a loading skeleton here
-    return <div className="w-16 md:w-56 bg-background border-r"></div>;
+    return <div className="w-16 md:w-56 bg-sidebar border-r"></div>;
   }
 
   const userRoles = session?.user?.roles;
   const menuItems = userRoles
     ? navItems.filter(
-        (item) => !item.roles || item.roles.some((r) => userRoles.includes(r))
-      )
+      (item) => !item.roles || item.roles.some((r) => userRoles.includes(r))
+    )
     : [];
 
   const toggleSidebar = () => {
@@ -82,10 +83,20 @@ export default function Sidebar() {
               <Menu className="h-5 w-5" />
             </Button>
           </SheetTrigger>
-          <SheetContent side="left" className="w-56 p-0">
+          <SheetContent
+            side="left"
+            className="dark w-56 border-0 bg-sidebar p-0 text-sidebar-foreground"
+          >
             <div className="flex flex-col h-full">
               <div className="p-4 flex items-center justify-center border-b h-14">
-                <h1 className="font-bold text-lg">{t('common.appName')}</h1>
+                {/* <h1 className="font-bold text-lg">{t('common.appName')}</h1> */}
+                <Image
+                  src="/1C54072F-00B3-4053-A8CD-1FD787BD8418.png" // publicディレクトリに置いた画像ファイルへのパス
+                  alt={t('common.appName')} // 画像が表示されない場合の代替テキスト
+                  width={50} // ロゴの幅（ピクセル単位で調整してください）
+                  height={10} // ロゴの高さ（ピクセル単位で調整してください）
+                  priority // ページの初期表示で重要なので、優先的に読み込みます
+                />
               </div>
               {navContent}
             </div>
@@ -96,26 +107,43 @@ export default function Sidebar() {
       {/* Desktop Sidebar */}
       <div
         className={cn(
-          'hidden md:flex relative h-screen bg-background border-r transition-all',
+          'dark hidden md:flex relative h-screen border-r transition-all',
+          'bg-sidebar text-sidebar-foreground',
           isCollapsed ? 'w-16' : 'w-56'
         )}
       >
-        <div className="flex flex-col h-full">
-          <div className="p-2 flex items-center justify-between border-b h-14">
-            <h1
-              className={cn('font-bold text-lg pl-2', { hidden: isCollapsed })}
-            >
-              {t('common.appName')}
-            </h1>
-            <Button variant="ghost" size="icon" onClick={toggleSidebar}>
-              <ChevronLeft
-                className={cn('h-5 w-5 transition-transform', {
-                  'rotate-180': isCollapsed,
-                })}
+        <div className="flex-1 flex-col h-full">
+          <div className="p-2 flex items-center justify-center border-b h-14 relative">
+            {isCollapsed && (
+              <Image
+                src="/favicon.ico"
+                alt={t('common.appName')}
+                width={32}
+                height={32}
               />
-            </Button>
+            )}
+            {!isCollapsed && (
+              <Image
+                src="/CCFCD28C-D34F-4878-912A-6C2AC994B07D.png"
+                alt={t('common.appName')}
+                width={150}
+                height={50}
+                priority
+                className="-translate-x-4"
+              />
+            )}
           </div>
           <TooltipProvider>{navContent}</TooltipProvider>
+        </div>
+        <div
+          onClick={toggleSidebar}
+          className="absolute top-1/2 -translate-y-1/2 -right-2.5 h-12 w-5 cursor-pointer group flex items-center justify-center rounded-r-md border border-l-0 bg-sidebar hover:bg-muted"
+        >
+          <ChevronLeft
+            className={cn('h-5 w-5 transition-transform group-hover:text-foreground', {
+              'rotate-180': isCollapsed,
+            })}
+          />
         </div>
       </div>
     </>

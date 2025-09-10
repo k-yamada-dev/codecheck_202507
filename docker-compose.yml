@@ -23,25 +23,36 @@ services:
     ports: ['8085:8085']
     restart: unless-stopped
 
-  api:
-    profiles: ['api']
+  web:
     build:
       context: .
-      dockerfile: docker/api.Dockerfile
+      dockerfile: docker/web.prod.Dockerfile
+    ports:
+      - '3000:3000'
+    # Use an env file to provide secrets at runtime (do NOT commit .env to VCS).
+    # Create a `.env` next to docker-compose.yml containing sensitive variables like:
+    #   FIREBASE_SERVICE_ACCOUNT_JSON='{"type": "...", "private_key": "...", ...}'
+    # You can also combine env_file with build args for values needed at build time.
+    env_file:
+      - .env
     environment:
-      DATABASE_URL: postgresql://postgres:postgres@db:5432/acuas_dev
-      PUBSUB_EMULATOR_HOST: pubsub:8085
-      PUBSUB_PROJECT_ID: local-dev
-      PUBSUB_TOPIC_JOBS: jobs
-      NEXT_PUBLIC_API_BASE: http://localhost:3000
-      GCS_BUCKET: local-bucket
+      DATABASE_URL: '${DATABASE_URL}'
+      PUBSUB_EMULATOR_HOST: '${PUBSUB_EMULATOR_HOST}'
+      PUBSUB_PROJECT_ID: '${PUBSUB_PROJECT_ID}'
+      PUBSUB_TOPIC_JOBS: '${PUBSUB_TOPIC_JOBS}'
+      NEXT_PUBLIC_API_BASE: '${NEXT_PUBLIC_API_BASE}'
+      GCS_BUCKET: '${GCS_BUCKET}'
+      NEXTAUTH_SECRET: '${NEXTAUTH_SECRET}'
+      NEXTAUTH_URL: '${NEXTAUTH_URL}'
+      FIREBASE_SERVICE_ACCOUNT_JSON: '${FIREBASE_SERVICE_ACCOUNT_JSON}'
+      NEXT_PUBLIC_FIREBASE_CONFIG: '${NEXT_PUBLIC_FIREBASE_CONFIG}'
+    # Mount local secrets directory so runtime can read GOOGLE_CLOUD_KEYFILE
+    # (do NOT commit the files; this mount is for local development only)
     volumes:
-      - .:/work
-      - node_modules_api:/work/node_modules
-    working_dir: /work
-    command: sh -c "until nc -z db 5432; do echo 'waiting for db'; sleep 1; done; pnpm i && pnpm prisma migrate deploy && pnpm dev --port 3000 --hostname 0.0.0.0"
-    ports: ['3000:3000']
-    depends_on: [db, pubsub]
+      - ./apps/web/config/secrets/acuasaas-credentials.json:/app/apps/web/config/secrets/acuasaas-credentials.json:ro
+    depends_on:
+      - db
+      - pubsub
 
   worker:
     build:
@@ -66,5 +77,4 @@ services:
 
 volumes:
   db_data:
-  node_modules_api:
   node_modules_worker:

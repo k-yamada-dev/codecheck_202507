@@ -44,6 +44,18 @@ steps:
       # - '--update-env-vars=KEY1=VALUE1,KEY2=VALUE2'
       # - '--set-secrets=OTHER=projects/PROJECT_ID/secrets/OTHER:latest'
 
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    id: 'Make Web Public'
+    entrypoint: gcloud
+    args:
+      - 'run'
+      - 'services'
+      - 'add-iam-policy-binding'
+      - '$_SERVICE_NAME_WEB'
+      - '--region=$_GCP_REGION'
+      - '--member=allUsers'
+      - '--role=roles/run.invoker'
+
   # -----------------------------------------------------------------------------
   # Build and Push Worker
   # -----------------------------------------------------------------------------

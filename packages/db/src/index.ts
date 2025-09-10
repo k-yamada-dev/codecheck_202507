@@ -11,5 +11,9 @@ export * from './repos/billingUsage';
 export * from './repos/userRoles';
 export type { TransactionClient } from './types';
 
+// Utilities
+export * from './utils/codes';
+export * from './utils/dbErrors';
+
 // ここに “共通サービス関数” を集約していく
 // 例）export async function findLogById(id: string) { return prisma.log.findUnique({ where: { id } }); }

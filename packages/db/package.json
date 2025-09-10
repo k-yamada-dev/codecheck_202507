@@ -17,7 +17,7 @@
     "migrate:status": "prisma migrate status",
     "migrate:dev": "prisma migrate dev",
     "migrate:generate": "prisma generate",
-    "seed": "prisma db seed -- --compiler tsx prisma/seed.ts",
+    "seed": "tsx prisma/seed.ts",
     "reset": "prisma migrate reset -f --skip-generate",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",

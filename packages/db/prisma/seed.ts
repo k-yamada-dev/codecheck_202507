@@ -13,14 +13,53 @@ const roleMap: { [K in 'internal_admin' | 'tenant_admin' | 'uploader']: Role } =
   uploader: 'UPLOADER',
 };
 
+async function generateUniqueUserCode(): Promise<string> {
+  // generate a candidate base36 string of up to 4 chars (lowercase)
+  const candidate = () => {
+    const max = Math.pow(36, 4); // 36^4 possibilities
+    const n = Math.floor(Math.random() * max);
+    return n.toString(36);
+  };
+
+  // try a few times to avoid collision
+  for (let i = 0; i < 10; i++) {
+    const code = candidate();
+    const found = await prisma.user.findFirst({ where: { userCode: code } });
+    if (!found) return code;
+  }
+
+  // fallback: deterministic-ish short slice of uuid
+  return randomUUID().replace(/-/g, '').slice(0, 4).toLowerCase();
+}
+
+async function generateUniqueTenantCode(): Promise<string> {
+  // generate a candidate base36 string of up to 6 chars (lowercase)
+  const candidate = () => {
+    const max = Math.pow(36, 6); // 36^6 possibilities
+    const n = Math.floor(Math.random() * max);
+    return n.toString(36);
+  };
+
+  // try a few times to avoid collision
+  for (let i = 0; i < 10; i++) {
+    const code = candidate();
+    const found = await prisma.tenant.findFirst({ where: { tenantCode: code } });
+    if (!found) return code;
+  }
+
+  // fallback: deterministic-ish short slice of uuid
+  return randomUUID().replace(/-/g, '').slice(0, 6).toLowerCase();
+}
+
 async function main() {
   // ---------- Tenant ----------
+  const tenantCode = await generateUniqueTenantCode();
   const tenantId = randomUUID();
   const tenant = await prisma.tenant.upsert({
     where: { id: tenantId },
     update: {
       name: 'System Tenant',
-      tenantCode: 'system',
+      tenantCode: tenantCode,
       isDeleted: false,
       deletedAt: null,
       updatedAt: ts('2025-08-04 17:04:06'),
@@ -28,7 +67,7 @@ async function main() {
     create: {
       id: tenantId,
       name: 'System Tenant',
-      tenantCode: 'system',
+      tenantCode: tenantCode,
       deletedAt: null,
       createdAt: ts('2025-08-04 17:04:02'),
       updatedAt: ts('2025-08-04 17:04:06'),
@@ -52,6 +91,7 @@ async function main() {
       tenantId: tenant.id,
       provider: 'firebase',
       externalId: 'mMhj1ynzhJfglZGlTta7eAHp67w1',
+      userCode: await generateUniqueUserCode(),
       name: '山田 勝喜',
       email: 'k-yamada@focus-s.com',
       isDeleted: false,
@@ -60,6 +100,14 @@ async function main() {
       updatedAt: ts('2025-08-06 07:25:41'),
     },
   });
+
+  if (!user1.userCode) {
+    const code = await generateUniqueUserCode();
+    await prisma.user.update({
+      where: { id: user1.id },
+      data: { userCode: code },
+    });
+  }
 
   // ---------- Roles (UserRole) ----------
   // user1: internal_admin / tenant_admin / uploader

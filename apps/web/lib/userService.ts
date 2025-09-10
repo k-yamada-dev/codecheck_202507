@@ -1,4 +1,4 @@
-import { prisma, TransactionClient } from '@acme/db';
+import { prisma, TransactionClient, generateUniqueUserCode } from '@acme/db';
 import { USER_ROLE, type RoleType } from '@acme/contracts';
 import { firebaseAdmin } from '@/lib/firebaseAdmin';
 import { AppError, ErrorCode } from '@/lib/errors/core';
@@ -33,6 +33,7 @@ export async function inviteUser({
         name,
         email,
         tenantId, // keep tenantId for backward compatibility; will be nullable in schema
+        userCode: await generateUniqueUserCode(),
       },
     });
   } else {
@@ -153,6 +154,7 @@ export async function createUser({
       externalId,
       name,
       email,
+      userCode: await generateUniqueUserCode(),
       userRoles: {
         create: roles.map((role) => ({
           tenantId: tenantId,
@@ -242,12 +244,6 @@ export async function createGipUserAndDbUser({
   let firebaseUser;
   try {
     firebaseUser = await firebaseAdmin.auth().getUserByEmail(email);
-    // 既にGIPにユーザーが存在する場合、重複エラー
-    throw new AppError(
-      ErrorCode.VALIDATION,
-      'このメールアドレスは既に登録されています',
-      409
-    );
   } catch (e) {
     if (e instanceof AppError) throw e; // AppErrorはそのままスロー
 
