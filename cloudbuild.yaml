@@ -11,13 +11,13 @@ steps:
         set -euo pipefail
         mkdir -p apps/web
         get_secret_or_value() {
-          VAL="$1"
+          VAL="$$1"
           # If the variable looks like a secret resource (projects/...), fetch via gcloud secrets
-          if [[ "$VAL" == projects/* ]]; then
-            gcloud secrets versions access "$VAL" --project="${PROJECT_ID}"
+          if [[ "$$VAL" == projects/* ]]; then
+            gcloud secrets versions access "$$VAL" --project="${PROJECT_ID}"
           else
             # Otherwise treat as literal value
-            echo "$VAL"
+            echo "$$VAL"
           fi
         }
         echo "Writing apps/web/.env with secrets/values (kept out of image)"
