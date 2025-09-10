@@ -12,6 +12,7 @@ steps:
       - |
         echo "--- DEBUG: Checking substitution variable ---"
         echo "Value of _SECRET_FIREBASE_SA: '$$_SECRET_FIREBASE_SA'"
+        echo "Value of _GCP_REGION: '$$_GCP_REGION'"
         echo "--- END DEBUG ---"
 
         if [ -z "$$_SECRET_FIREBASE_SA" ]; then
