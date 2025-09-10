@@ -8,7 +8,10 @@ steps:
     entrypoint: 'bash'
     args:
       - '-c'
-      - "gcloud secrets versions access latest --secret='${_SECRET_FIREBASE_SA}' > firebase-sa-key.json"
+      # フルパスの変数からbasenameでシークレット名だけを抽出し、--secretフラグに渡す
+      - |
+        SECRET_NAME=$$(basename $$_SECRET_FIREBASE_SA)
+        gcloud secrets versions access latest --secret="$${SECRET_NAME}" > firebase-sa-key.json
 
   - name: 'gcr.io/cloud-builders/docker'
     id: 'Build Web'
