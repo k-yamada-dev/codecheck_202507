@@ -30,7 +30,7 @@ steps:
 
         # here-documentを使って正しい場所に.envファイルを生成
         cat <<EOT > apps/web/.env
-        NEXT_PUBLIC_FIREBASE_CONFIG=${firebase_config_value}
+        NEXT_PUBLIC_FIREBASE_CONFIG="${firebase_config_value}"
         NEXTAUTH_SECRET="${nextauth_value}"
         DATABASE_URL="${db_url_value}"
         GCS_BUCKET_NAME="${gcs_bucket_name_value}"
