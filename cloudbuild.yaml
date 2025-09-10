@@ -75,17 +75,6 @@ steps:
         firebase_config_name=$(basename "${_NEXT_PUBLIC_FIREBASE_CONFIG}")
         database_url_name=$(basename "${_SECRET_DATABASE_URL}")
 
-        # 正しいフォーマット(KEY=SECRET_NAME:latest)で文字列を組み立てる
-        secrets_arg="NEXTAUTH_SECRET=${nextauth_secret_name}:latest"
-        secrets_arg+=",GCS_BUCKET_NAME=${gcs_bucket_name_name}:latest"
-        secrets_arg+=",FIREBASE_SERVICE_ACCOUNT_JSON=${firebase_sa_name}:latest"
-        secrets_arg+=",NEXT_PUBLIC_FIREBASE_CONFIG=${firebase_config_name}:latest"
-        secrets_arg+=",DATABASE_URL=${database_url_name}:latest"
-
-        # NEXTAUTH_URLはシークレットではないので、--update-env-varsで渡す
-        env_vars_arg="CLOUD_SQL_INSTANCE_CONNECTION_NAME=${_CLOUD_SQL_INSTANCE_CONNECTION_NAME}"
-        env_vars_arg+=",NEXTAUTH_URL=${_NEXTAUTH_URL}"
-
         # --- gcloud run deploy を実行 ---
         gcloud run deploy "$_SERVICE_NAME_WEB" \
           --image="$_GCP_REGION-docker.pkg.dev/$PROJECT_ID/$_ARTIFACT_REGISTRY_REPO/$_SERVICE_NAME_WEB:$COMMIT_SHA" \
@@ -94,8 +83,12 @@ steps:
           --quiet \
           --allow-unauthenticated \
           --add-cloudsql-instances="$_CLOUD_SQL_INSTANCE_CONNECTION_NAME" \
-          --update-env-vars="$env_vars_arg" \
-          --set-secrets="$secrets_arg"
+          --update-env-vars="CLOUD_SQL_INSTANCE_CONNECTION_NAME=${_CLOUD_SQL_INSTANCE_CONNECTION_NAME},NEXTAUTH_URL=${_NEXTAUTH_URL}" \
+          --set-secrets="NEXTAUTH_SECRET=${nextauth_secret_name}:latest" \
+          --set-secrets="GCS_BUCKET_NAME=${gcs_bucket_name_name}:latest" \
+          --set-secrets="FIREBASE_SERVICE_ACCOUNT_JSON=${firebase_sa_name}:latest" \
+          --set-secrets="NEXT_PUBLIC_FIREBASE_CONFIG=${firebase_config_name}:latest" \
+          --set-secrets="DATABASE_URL=${database_url_name}:latest"
 
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
     id: 'Make Web Public'
