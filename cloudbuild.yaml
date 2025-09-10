@@ -2,6 +2,14 @@ steps:
   # -----------------------------------------------------------------------------
   # Build and Push Web App
   # -----------------------------------------------------------------------------
+  # Firebaseのサービスアカウントキーをファイルとして保存する
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    id: 'Prepare Firebase Service Account Key'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - "gcloud secrets versions access latest --secret='${_SECRET_FIREBASE_SA}' > firebase-sa-key.json"
+
   - name: 'gcr.io/cloud-builders/docker'
     id: 'Build Web'
     # secretEnvでビルドステップの環境変数を設定
@@ -9,7 +17,6 @@ steps:
       - 'NEXT_PUBLIC_FIREBASE_CONFIG'
       - 'NEXTAUTH_SECRET'
       - 'DATABASE_URL'
-      - 'FIREBASE_SERVICE_ACCOUNT_JSON'
     args:
       - 'build'
       - '--tag=$_GCP_REGION-docker.pkg.dev/$PROJECT_ID/$_ARTIFACT_REGISTRY_REPO/$_SERVICE_NAME_WEB:$COMMIT_SHA'
@@ -18,7 +25,6 @@ steps:
       - '--build-arg=NEXT_PUBLIC_FIREBASE_CONFIG'
       - '--build-arg=NEXTAUTH_SECRET'
       - '--build-arg=DATABASE_URL'
-      - '--build-arg=FIREBASE_SERVICE_ACCOUNT_JSON'
       - '--build-arg=GCS_BUCKET_NAME=$_GCS_BUCKET_NAME' # シークレットでない値も同様に渡せる
       - '--build-arg=CLOUD_SQL_INSTANCE_CONNECTION_NAME=$_CLOUD_SQL_INSTANCE_CONNECTION_NAME'
       - '.'
@@ -129,6 +135,3 @@ availableSecrets:
     # DATABASE_URL
     - versionName: ${_SECRET_DATABASE_URL}/versions/latest
       env: 'DATABASE_URL'
-    # FIREBASE_SERVICE_ACCOUNT_JSON
-    - versionName: ${_SECRET_FIREBASE_SA}/versions/latest
-      env: 'FIREBASE_SERVICE_ACCOUNT_JSON'
