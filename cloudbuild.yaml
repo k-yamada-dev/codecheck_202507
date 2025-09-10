@@ -8,19 +8,13 @@ steps:
     entrypoint: 'bash'
     args:
       - '-c'
-      # デバッグのため、受け取った変数の値をログに出力する
+      # Cloud Buildによる変数置換を直接利用する ($$ を $ に修正)
       - |
-        echo "--- DEBUG: Checking substitution variable ---"
-        echo "Value of _SECRET_FIREBASE_SA: '$_SECRET_FIREBASE_SA'"
-        echo "Value of _GCP_REGION: '$_GCP_REGION'"
-        echo "--- END DEBUG ---"
-
-        if [ -z "$$_SECRET_FIREBASE_SA" ]; then
+        if [ -z "${_SECRET_FIREBASE_SA}" ]; then
           echo "ERROR: The substitution variable '_SECRET_FIREBASE_SA' is not set."
-          echo "Please check the Cloud Build trigger configuration."
           exit 1
         fi
-        gcloud secrets versions access "$${_SECRET_FIREBASE_SA}/versions/latest" > firebase-sa-key.json
+        gcloud secrets versions access "${_SECRET_FIREBASE_SA}/versions/latest" > firebase-sa-key.json
 
   - name: 'gcr.io/cloud-builders/docker'
     id: 'Build Web'
