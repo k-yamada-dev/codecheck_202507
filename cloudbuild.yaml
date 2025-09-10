@@ -8,8 +8,14 @@ steps:
     entrypoint: 'bash'
     args:
       - '-c'
-      # 変数で渡されたフルパスに直接 /versions/latest を追記してコマンドに渡す
-      - 'gcloud secrets versions access $${_SECRET_FIREBASE_SA}/versions/latest > firebase-sa-key.json'
+      # 実行前に変数が空でないかチェックし、エラーメッセージを明確にする
+      - |
+        if [ -z "$$_SECRET_FIREBASE_SA" ]; then
+          echo "ERROR: The substitution variable '_SECRET_FIREBASE_SA' is not set."
+          echo "Please check the Cloud Build trigger configuration."
+          exit 1
+        fi
+        gcloud secrets versions access "$${_SECRET_FIREBASE_SA}/versions/latest" > firebase-sa-key.json
 
   - name: 'gcr.io/cloud-builders/docker'
     id: 'Build Web'
