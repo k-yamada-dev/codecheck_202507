@@ -15,6 +15,23 @@ export const authOptions: NextAuthOptions = {
         idToken: { label: 'ID Token', type: 'text' },
       },
       async authorize(credentials) {
+        // debug: log that authorize was called and whether idToken exists (do NOT log token itself)
+        try {
+          console.log(
+            '[auth] authorize called - credential keys:',
+            credentials ? Object.keys(credentials) : null
+          );
+        } catch (e) {
+          console.log('[auth] authorize debug log failed:', e);
+        }
+        const hasIdToken = !!credentials?.idToken;
+        console.log(
+          '[auth] idToken present:',
+          hasIdToken,
+          'idToken length:',
+          credentials?.idToken ? credentials.idToken.length : 0
+        );
+
         if (!credentials?.idToken) {
           return null;
         }
