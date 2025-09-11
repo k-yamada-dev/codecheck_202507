@@ -17,9 +17,9 @@ const nextConfig = {
       bodySizeLimit: '2mb',
     },
   },
-  // 本番環境での最適化
+  // 本番環境での最適化 (temporarily disabled for debugging)
   compiler: {
-    removeConsole: process.env.NODE_ENV === 'production',
+    removeConsole: false,
   },
   // キャッシュの設定
   generateEtags: true,
