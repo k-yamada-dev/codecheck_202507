@@ -19,8 +19,7 @@ COPY packages/db/prisma ./packages/db/prisma
 # 依存関係をインストール
 RUN pnpm install --frozen-lockfile
 
-# firebase-sa-key.jsonファイルをイメージ内にコピーします
-COPY firebase-sa-key.json .
+
 # ソースコードをコピー
 COPY . .
 

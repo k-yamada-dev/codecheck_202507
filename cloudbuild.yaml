@@ -9,14 +9,7 @@ steps:
     args:
       - '-c'
       - |
-        # 1. Firebaseサービスアカウントキーのファイルを準備
-        if [ -z "${_SECRET_FIREBASE_SA}" ]; then
-          echo "ERROR: The substitution variable '_SECRET_FIREBASE_SA' is not set." >&2
-          exit 1
-        fi
-        gcloud secrets versions access "${_SECRET_FIREBASE_SA}/versions/latest" > firebase-sa-key.json
-
-        # 2. Next.jsのビルド用の.envファイルを準備
+        # Next.jsのビルド用の.envファイルを準備
         echo "Creating .env file for the build..."
 
         # ビルドに必要なシークレットを取得し、tr -d '\r\n' で改行と復帰コードを完全に削除
@@ -24,6 +17,7 @@ steps:
         nextauth_value=$(gcloud secrets versions access "${_SECRET_NEXTAUTH_SECRET}/versions/latest" | tr -d '\r\n')
         db_url_value=$(gcloud secrets versions access "${_SECRET_DATABASE_URL}/versions/latest" | tr -d '\r\n')
         gcs_bucket_name_value=$(gcloud secrets versions access "${_GCS_BUCKET_NAME}/versions/latest" | tr -d '\r\n')
+        firebase_sa_value=$(gcloud secrets versions access "${_SECRET_FIREBASE_SA}/versions/latest" | tr -d '\r\n')
 
         # .envファイルを作成するディレクトリを apps/web/ に変更
         mkdir -p apps/web
@@ -36,6 +30,7 @@ steps:
         DATABASE_URL="${db_url_value}"
         GCS_BUCKET_NAME="${gcs_bucket_name_value}"
         CLOUD_SQL_INSTANCE_CONNECTION_NAME="${_CLOUD_SQL_INSTANCE_CONNECTION_NAME}"
+        FIREBASE_SERVICE_ACCOUNT_JSON=${firebase_sa_value}
         EOT
 
         echo "--- .env file created successfully in apps/web/ ---"
@@ -70,8 +65,23 @@ steps:
         # --- NEXTAUTH_URL の "値" をシークレットから取得 ---
         nextauth_url_value=$(gcloud secrets versions access "${_NEXTAUTH_URL}/versions/latest" | tr -d '\r\n')
 
-        # --- gcloud run deploy を実行 (1行にまとめて確実性を向上) ---
-        gcloud run deploy "$_SERVICE_NAME_WEB" --image="$_GCP_REGION-docker.pkg.dev/$PROJECT_ID/$_ARTIFACT_REGISTRY_REPO/$_SERVICE_NAME_WEB:$COMMIT_SHA" --region "$_GCP_REGION" --platform "managed" --quiet --allow-unauthenticated --add-cloudsql-instances="$_CLOUD_SQL_INSTANCE_CONNECTION_NAME" --update-env-vars="CLOUD_SQL_INSTANCE_CONNECTION_NAME=${_CLOUD_SQL_INSTANCE_CONNECTION_NAME},NEXTAUTH_URL=${nextauth_url_value}" --set-secrets="DATABASE_URL=${_SECRET_DATABASE_URL}:latest" --set-secrets="NEXTAUTH_SECRET=${_SECRET_NEXTAUTH_SECRET}:latest" --set-secrets="GCS_BUCKET_NAME=${_GCS_BUCKET_NAME}:latest" --set-secrets="FIREBASE_SERVICE_ACCOUNT_JSON=${_SECRET_FIREBASE_SA}:latest" --set-secrets="NEXT_PUBLIC_FIREBASE_CONFIG=${_NEXT_PUBLIC_FIREBASE_CONFIG}:latest"
+        # --- 各シークレットの "値" をシークレットから取得 ---
+        nextauth_url_value=$(gcloud secrets versions access "${_NEXTAUTH_URL}/versions/latest" | tr -d '\r\n')
+        database_url_value=$(gcloud secrets versions access "${_SECRET_DATABASE_URL}/versions/latest" | tr -d '\r\n')
+        nextauth_secret_value=$(gcloud secrets versions access "${_SECRET_NEXTAUTH_SECRET}/versions/latest" | tr -d '\r\n')
+        gcs_bucket_name_value=$(gcloud secrets versions access "${_GCS_BUCKET_NAME}/versions/latest" | tr -d '\r\n')
+        firebase_sa_value=$(gcloud secrets versions access "${_SECRET_FIREBASE_SA}/versions/latest" | tr -d '\r\n')
+        firebase_config_value=$(gcloud secrets versions access "${_NEXT_PUBLIC_FIREBASE_CONFIG}/versions/latest" | tr -d '\r\n')
+
+        # --- gcloud run deploy を実行 ---
+        gcloud run deploy "$_SERVICE_NAME_WEB" \
+          --image="$_GCP_REGION-docker.pkg.dev/$PROJECT_ID/$_ARTIFACT_REGISTRY_REPO/$_SERVICE_NAME_WEB:$COMMIT_SHA" \
+          --region "$_GCP_REGION" \
+          --platform "managed" \
+          --quiet \
+          --allow-unauthenticated \
+          --add-cloudsql-instances="$_CLOUD_SQL_INSTANCE_CONNECTION_NAME" \
+          --update-env-vars="CLOUD_SQL_INSTANCE_CONNECTION_NAME=${_CLOUD_SQL_INSTANCE_CONNECTION_NAME},NEXTAUTH_URL=${nextauth_url_value},DATABASE_URL=${database_url_value},NEXTAUTH_SECRET=${nextauth_secret_value},GCS_BUCKET_NAME=${gcs_bucket_name_value},FIREBASE_SERVICE_ACCOUNT_JSON=${firebase_sa_value},NEXT_PUBLIC_FIREBASE_CONFIG=${firebase_config_value}"
 
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
     id: 'Make Web Public'
