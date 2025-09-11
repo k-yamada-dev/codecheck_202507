@@ -1,5 +1,7 @@
 import * as admin from 'firebase-admin';
 
+console.log('[Firebase Admin] Module loaded.');
+
 if (!admin.apps.length) {
   try {
     console.log('[Firebase Admin] Initializing...');
@@ -33,6 +35,8 @@ if (!admin.apps.length) {
     // エラーオブジェクト全体を出力して詳細を確認
     console.error('[Firebase Admin] SDK initialization error:', error);
   }
+} else {
+  console.log('[Firebase Admin] SDK already initialized.');
 }
 
 export const firebaseAdmin = admin;
