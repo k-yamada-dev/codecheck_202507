@@ -30,7 +30,6 @@ steps:
         DATABASE_URL="${db_url_value}"
         GCS_BUCKET_NAME="${gcs_bucket_name_value}"
         CLOUD_SQL_INSTANCE_CONNECTION_NAME="${_CLOUD_SQL_INSTANCE_CONNECTION_NAME}"
-        FIREBASE_SERVICE_ACCOUNT_JSON=${firebase_sa_value}
         EOT
 
         echo "--- .env file created successfully in apps/web/ ---"
